@@ -16,21 +16,22 @@
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-        .calendar-day { min-height: 110px; }
+        .calendar-day { min-height: 110px; } /* 높이 조정 */
         .calendar-day.other-month { background-color: #f9fafb; color: #d1d5db; }
         @keyframes pulse { 50% { opacity: .5; } }
         .skeleton { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; background-color: #e5e7eb; border-radius: 0.5rem; }
         .sidebar { transition: width 0.3s ease-in-out, transform 0.3s ease-in-out; }
         
-        .btn-sky { background-color: #0ea5e9; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: background-color 0.2s; }
-        .btn-sky:hover { background-color: #0284c7; }
-        .btn-rose { background-color: #f43f5e; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: background-color 0.2s; }
-        .btn-rose:hover { background-color: #e11d48; }
-        .btn-green { background-color: #22c55e; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: background-color 0.2s; }
-        .btn-green:hover { background-color: #16a34a; }
-        .btn-gray { background-color: #e5e7eb; color: #374151; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: background-color 0.2s; }
+        /* --- 요청하신 버튼 스타일 --- */
+        .btn-sky { background-color: #0ea5e9; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: all 0.2s; }
+        .btn-sky:hover { background-color: #0284c7; box-shadow: 0 4px 15px -5px rgba(2, 132, 199, 0.6); transform: translateY(-2px); }
+        .btn-rose { background-color: #f43f5e; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: all 0.2s; }
+        .btn-rose:hover { background-color: #e11d48; box-shadow: 0 4px 15px -5px rgba(225, 29, 72, 0.6); transform: translateY(-2px); }
+        .btn-green { background-color: #22c55e; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: all 0.2s; }
+        .btn-green:hover { background-color: #16a34a; box-shadow: 0 4px 15px -5px rgba(22, 163, 74, 0.6); transform: translateY(-2px); }
+        .btn-gray { background-color: #e5e7eb; color: #374151; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: all 0.2s; }
         .btn-gray:hover { background-color: #d1d5db; }
-        .btn-red { background-color: #f43f5e; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: background-color 0.2s; }
+        .btn-red { background-color: #f43f5e; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: all 0.2s; }
         .btn-red:hover { background-color: #e11d48; }
     </style>
 </head>
@@ -104,6 +105,168 @@
         };
         
         // --- 일정 관리 관련 컴포넌트 ---
+        const StudentSelector = ({ currentClassStudents, allSchoolStudents, selectedStudents, onStudentToggle, onSelectAll, onClearAll }) => {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [isSearching, setIsSearching] = useState(false);
+            const [searchResults, setSearchResults] = useState([]);
+
+            const handleSearch = async () => {
+                if (!searchTerm.trim()) {
+                    setSearchResults([]);
+                    return;
+                }
+                setIsSearching(true);
+                const nameQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('name', '>=', searchTerm).where('name', '<=', searchTerm + '\uf8ff').get();
+                const idQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('studentId', '==', searchTerm).get();
+                const [nameSnapshot, idSnapshot] = await Promise.all([nameQuery, idQuery]);
+                const resultsMap = new Map();
+                nameSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
+                idSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
+                setSearchResults(Array.from(resultsMap.values()));
+                setIsSearching(false);
+            };
+
+            const studentsToList = searchTerm ? searchResults : currentClassStudents;
+            const isAllSelected = currentClassStudents.length > 0 && currentClassStudents.every(s => selectedStudents.some(ss => ss.id === s.id));
+
+            return (
+                <div className="w-80 bg-gray-50 p-4 border-l flex flex-col rounded-r-2xl">
+                    <div className="flex gap-2 mb-4">
+                        <input type="text" placeholder="전체 학생 검색 (이름/학번)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="w-full p-2 border rounded-md" />
+                        <button onClick={handleSearch} className="btn-sky flex-shrink-0 !px-4 !py-2">검색</button>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2 text-sm">
+                            <input type="checkbox" checked={isAllSelected} onChange={() => isAllSelected ? onClearAll() : onSelectAll()} className="h-4 w-4 rounded"/>
+                            학급 학생 모두 선택
+                        </label>
+                    </div>
+                    <div className="flex-grow overflow-y-auto border-y py-2 mb-4">
+                        {searchTerm && <h5 className="p-2 text-sm font-bold text-gray-600 bg-gray-100 sticky top-0">전체 학생 검색 결과</h5>}
+                        {isSearching && <p className="text-center p-4">검색 중...</p>}
+                        {[...studentsToList].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId))).map(student => (
+                            <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded-md">
+                                <input type="checkbox" id={`student-${student.id}`} checked={selectedStudents.some(s => s.id === student.id)} onChange={() => onStudentToggle(student)} className="h-4 w-4 rounded" />
+                                <label htmlFor={`student-${student.id}`} className="flex-grow">{student.name} ({student.studentId})</label>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex-shrink-0">
+                        <h4 className="font-bold mb-2">선택된 학생 ({selectedStudents.length}명)</h4>
+                        <div className="h-32 overflow-y-auto bg-white p-2 border rounded-md text-sm space-y-1">
+                            {[...selectedStudents].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId))).map(s => 
+                                <div key={s.id} className="flex justify-between items-center bg-sky-50 p-1 rounded">
+                                    <span>{s.name} ({s.studentId})</span>
+                                    <button onClick={() => onStudentToggle(s)} className="text-red-400 hover:text-red-600 font-bold text-lg leading-none">&times;</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ScheduleFormModal = ({ isOpen, onClose, onSubmit, initialData, currentClassStudents, allSchoolStudents, setModalState }) => {
+            const [schedule, setSchedule] = useState(initialData);
+            const [isStudentSelectorOpen, setIsStudentSelectorOpen] = useState(false);
+
+            useEffect(() => {
+                setSchedule({ title: '', description: '', date: '', time: '', applyToAll: false, relatedStudents: [], ...initialData });
+                if (!isOpen) setIsStudentSelectorOpen(false);
+            }, [isOpen, initialData]);
+
+            if (!isOpen) return null;
+
+            const handleChange = (e) => {
+                const { name, value, type, checked } = e.target;
+                setSchedule(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+            };
+
+            const handleStudentToggle = (student) => {
+                setSchedule(prev => {
+                    const isSelected = prev.relatedStudents.some(s => s.id === student.id);
+                    return { ...prev, relatedStudents: isSelected ? prev.relatedStudents.filter(s => s.id !== student.id) : [...prev.relatedStudents, student] };
+                });
+            };
+            
+            const handleSelectAll = () => {
+                const newStudents = currentClassStudents.filter(cs => !schedule.relatedStudents.some(ss => ss.id === cs.id));
+                setSchedule(prev => ({...prev, relatedStudents: [...prev.relatedStudents, ...newStudents]}));
+            };
+
+            const handleClearAll = () => {
+                setSchedule(prev => ({...prev, relatedStudents: prev.relatedStudents.filter(ss => !currentClassStudents.some(cs => cs.id === ss.id))}));
+            };
+            
+            const handleSubmit = () => {
+                if(!schedule.title.trim() || !schedule.date) {
+                    setModalState({ isOpen: true, title: "입력 오류", content: "제목과 날짜는 필수 항목입니다."});
+                    return;
+                }
+                onSubmit(schedule);
+                onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50" onClick={onClose}>
+                    <div className="bg-white rounded-2xl shadow-xl flex" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-8 w-[500px]">
+                            <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">{schedule.id ? "일정 수정" : "일정 추가"}</h3>
+                            <div className="space-y-4">
+                                <input type="text" name="title" placeholder="제목" value={schedule.title} onChange={handleChange} className="w-full p-3 border rounded-lg" required />
+                                <textarea name="description" placeholder="설명" value={schedule.description} onChange={handleChange} className="w-full p-3 border rounded-lg h-24" />
+                                <div className="flex gap-4">
+                                    <input type="date" name="date" value={schedule.date} onChange={handleChange} className="w-full p-3 border rounded-lg" required />
+                                    <input type="time" name="time" value={schedule.time} onChange={handleChange} className="w-full p-3 border rounded-lg" />
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <label className="flex items-center gap-2">
+                                        <input type="checkbox" name="applyToAll" checked={schedule.applyToAll} onChange={handleChange} className="h-4 w-4"/>
+                                        나의 모든 학급에 적용
+                                    </label>
+                                    <button onClick={() => setIsStudentSelectorOpen(prev => !prev)} className="btn-gray !px-4 !py-2">학생 선택</button>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 mt-8 justify-end">
+                                <button onClick={onClose} className="btn-gray">취소</button>
+                                <button onClick={handleSubmit} className="btn-sky">{schedule.id ? "수정" : "저장"}</button>
+                            </div>
+                        </div>
+                        {isStudentSelectorOpen && <StudentSelector currentClassStudents={currentClassStudents} allSchoolStudents={allSchoolStudents} selectedStudents={schedule.relatedStudents} onStudentToggle={handleStudentToggle} onSelectAll={handleSelectAll} onClearAll={handleClearAll} />}
+                    </div>
+                </div>
+            );
+        };
+
+        const ScheduleDetailModal = ({ isOpen, onClose, schedule, onEdit, onDelete, isTeacher }) => {
+            if(!isOpen || !schedule) return null;
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50" onClick={onClose}>
+                    <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">{schedule.title}</h3>
+                        <p className="text-gray-500 mb-4">{schedule.date} {schedule.time}</p>
+                        <p className="bg-gray-50 p-4 rounded-md mb-4 min-h-[100px] whitespace-pre-wrap">{schedule.description || "상세 설명이 없습니다."}</p>
+                        <h4 className="font-bold mb-2">관련 학생</h4>
+                        <div className="bg-gray-50 p-4 rounded-md mb-6 text-sm">
+                            {schedule.relatedStudents && schedule.relatedStudents.length > 0 ? 
+                                [...schedule.relatedStudents].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId))).map(s => <span key={s.id} className="inline-block bg-sky-100 text-sky-800 px-2 py-1 rounded-full mr-2 mb-2">{s.name} ({s.studentId})</span>) :
+                                "이 학급의 모든 학생에게 적용됩니다."
+                            }
+                        </div>
+                        <div className="flex gap-4 mt-8 justify-end">
+                            <button onClick={onClose} className="btn-gray">닫기</button>
+                            {isTeacher && (
+                                <>
+                                    <button onClick={() => { onClose(); onEdit(schedule); }} className="btn-sky">수정</button>
+                                    <button onClick={() => { onClose(); onDelete(schedule); }} className="btn-red">삭제</button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )
+        };
+
         const ScheduleCalendar = ({ classes, selectedClass, selectedClassId, students, allSchoolStudents, teacherId, isTeacher, setModalState: setAppModalState }) => {
             const [currentDate, setCurrentDate] = useState(new Date());
             const [schedules, setSchedules] = useState([]);
@@ -521,8 +684,8 @@
                                             <td className="p-3">{s.studentId}</td>
                                             <td className="p-3">{s.schoolAccount}</td>
                                             <td className="p-3 text-center flex gap-2 justify-center">
-                                                <button onClick={() => setInvitingStudent(s)} className="btn-green !px-3 !py-1 text-xs">학급 초대</button>
-                                                <button onClick={() => deleteStudent(s)} className="btn-red !px-3 !py-1 text-xs">학급에서 제외</button>
+                                                <button onClick={() => setInvitingStudent(s)} className="btn-green !px-4 !py-1">학급 초대</button>
+                                                <button onClick={() => deleteStudent(s)} className="btn-red !px-4 !py-1">학급에서 제외</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -1183,7 +1346,7 @@
                 let unsub = () => {};
                 if (isTeacher) {
                     unsub = db.collection(CONSTANTS.COLLECTIONS.CLASSES).where('teacherId', '==', user.uid).onSnapshot(snapshot => {
-                        const classList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.className.localeCompare(b.className));
+                        const classList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         setClasses(classList);
                         if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
                             setSelectedClassId(classList[0].id);
@@ -1199,7 +1362,7 @@
                             if (approvedClassIds.length > 0) {
                                 const classPromises = approvedClassIds.map(id => db.collection('classes').doc(id).get());
                                 const classDocs = await Promise.all(classPromises);
-                                const classList = classDocs.filter(doc => doc.exists).map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.className.localeCompare(b.className));
+                                const classList = classDocs.filter(doc => doc.exists).map(doc => ({ id: doc.id, ...doc.data() }));
                                 setClasses(classList);
                                  if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
                                      setSelectedClassId(classList[0].id);
@@ -1678,6 +1841,4 @@
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
-</html>
-
 </html>
