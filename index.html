@@ -305,7 +305,7 @@
             const isAllSelected = currentClassStudents.length > 0 && currentClassStudents.every(s => selectedStudents.some(ss => ss.id === s.id));
 
             return (
-                <div className="w-80 bg-gray-50 p-4 border-l flex flex-col rounded-r-2xl">
+                <div className="w-full md:w-80 bg-gray-50 p-4 border-t md:border-t-0 md:border-l flex flex-col rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none">
                     <div className="flex gap-2 mb-4">
                         <input type="text" placeholder="전체 학생 검색 (이름/학번)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="w-full p-2 border rounded-md" />
                         <button onClick={handleSearch} className="btn-sky flex-shrink-0 !px-4 !py-2">검색</button>
@@ -383,31 +383,38 @@
             };
 
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50" onClick={onClose}>
-                    <div className="bg-white rounded-2xl shadow-xl flex" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-8 w-[500px]">
-                            <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">{schedule.id ? "일정 수정" : "일정 추가"}</h3>
-                            <div className="space-y-4">
-                                <input type="text" name="title" placeholder="제목" value={schedule.title} onChange={handleChange} className="w-full p-3 border rounded-lg" required />
-                                <textarea name="description" placeholder="설명" value={schedule.description} onChange={handleChange} className="w-full p-3 border rounded-lg h-24" />
-                                <div className="flex gap-4">
-                                    <input type="date" name="date" value={schedule.date} onChange={handleChange} className="w-full p-3 border rounded-lg" required />
-                                    <input type="time" name="time" value={schedule.time} onChange={handleChange} className="w-full p-3 border rounded-lg" />
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
+                    <div 
+                        className="bg-white rounded-2xl shadow-xl flex flex-col w-full max-w-lg md:max-w-none md:w-auto max-h-[90vh] overflow-y-auto" 
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex flex-col md:flex-row">
+                            <div className="p-8 w-full md:w-[500px] flex-shrink-0">
+                                <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">{schedule.id ? "일정 수정" : "일정 추가"}</h3>
+                                <div className="space-y-4">
+                                    <input type="text" name="title" placeholder="제목" value={schedule.title} onChange={handleChange} className="w-full p-3 border rounded-lg" required />
+                                    <textarea name="description" placeholder="설명" value={schedule.description} onChange={handleChange} className="w-full p-3 border rounded-lg h-24" />
+                                    <div className="flex gap-4">
+                                        <input type="date" name="date" value={schedule.date} onChange={handleChange} className="w-full p-3 border rounded-lg" required />
+                                        <input type="time" name="time" value={schedule.time} onChange={handleChange} className="w-full p-3 border rounded-lg" />
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <label className="flex items-center gap-2">
+                                            <input type="checkbox" name="applyToAll" checked={schedule.applyToAll} onChange={handleChange} className="h-4 w-4"/>
+                                            나의 모든 학급에 적용
+                                        </label>
+                                        <button onClick={() => setIsStudentSelectorOpen(prev => !prev)} className="btn-gray !px-4 !py-2">
+                                            {isStudentSelectorOpen ? '학생선택 닫기' : '학생 선택'}
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <label className="flex items-center gap-2">
-                                        <input type="checkbox" name="applyToAll" checked={schedule.applyToAll} onChange={handleChange} className="h-4 w-4"/>
-                                        나의 모든 학급에 적용
-                                    </label>
-                                    <button onClick={() => setIsStudentSelectorOpen(prev => !prev)} className="btn-gray !px-4 !py-2">학생 선택</button>
+                                <div className="flex gap-4 mt-8 justify-end">
+                                    <button onClick={onClose} className="btn-gray">취소</button>
+                                    <button onClick={handleSubmit} className="btn-sky">{schedule.id ? "수정" : "저장"}</button>
                                 </div>
                             </div>
-                            <div className="flex gap-4 mt-8 justify-end">
-                                <button onClick={onClose} className="btn-gray">취소</button>
-                                <button onClick={handleSubmit} className="btn-sky">{schedule.id ? "수정" : "저장"}</button>
-                            </div>
+                            {isStudentSelectorOpen && <StudentSelector currentClassStudents={currentClassStudents} allSchoolStudents={allSchoolStudents} selectedStudents={schedule.relatedStudents} onStudentToggle={handleStudentToggle} onSelectAll={handleSelectAll} onClearAll={handleClearAll} />}
                         </div>
-                        {isStudentSelectorOpen && <StudentSelector currentClassStudents={currentClassStudents} allSchoolStudents={allSchoolStudents} selectedStudents={schedule.relatedStudents} onStudentToggle={handleStudentToggle} onSelectAll={handleSelectAll} onClearAll={handleClearAll} />}
                     </div>
                 </div>
             );
