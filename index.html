@@ -16,13 +16,11 @@
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-        .calendar-day { min-height: 110px; } /* 높이 조정 */
+        .calendar-day { min-height: 110px; }
         .calendar-day.other-month { background-color: #f9fafb; color: #d1d5db; }
         @keyframes pulse { 50% { opacity: .5; } }
         .skeleton { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; background-color: #e5e7eb; border-radius: 0.5rem; }
         .sidebar { transition: width 0.3s ease-in-out, transform 0.3s ease-in-out; }
-        
-        /* --- 요청하신 버튼 스타일 --- */
         .btn-sky { background-color: #0ea5e9; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: all 0.2s; }
         .btn-sky:hover { background-color: #0284c7; box-shadow: 0 4px 15px -5px rgba(2, 132, 199, 0.6); transform: translateY(-2px); }
         .btn-rose { background-color: #f43f5e; color: white; font-weight: bold; border-radius: 0.5rem; padding: 0.625rem 1.5rem; transition: all 0.2s; }
@@ -41,7 +39,6 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
-        // --- 상수 및 Firebase 초기화 ---
         const CONSTANTS = {
             SCHOOL_DOMAIN: 'somyong.ms.kr',
             COLLECTIONS: { TEACHERS: 'teachers', STUDENTS: 'students', CLASSES: 'classes', SCORES: 'scores', SCHEDULES: 'schedules', ASSESSMENTS: 'assessments' },
@@ -61,7 +58,6 @@
         const db = firebase.firestore();
         const FieldValue = firebase.firestore.FieldValue;
 
-        // --- 유틸리티 함수 ---
         const mapAuthCodeToMessage = (code) => {
             switch (code) {
                 case 'auth/user-not-found': return '등록되지 않은 사용자입니다.';
@@ -75,7 +71,6 @@
             }
         };
 
-        // --- 공용 컴포넌트 ---
         const Modal = ({ modalState, setModalState }) => {
             const { isOpen, title, content, isConfirm, onConfirm, confirmText = '확인', cancelText = '취소', size = 'max-w-lg' } = modalState;
             if (!isOpen) return null;
@@ -104,7 +99,6 @@
             );
         };
         
-        // --- 일정 관리 관련 컴포넌트 ---
         const StudentSelector = ({ currentClassStudents, allSchoolStudents, selectedStudents, onStudentToggle, onSelectAll, onClearAll }) => {
             const [searchTerm, setSearchTerm] = useState('');
             const [isSearching, setIsSearching] = useState(false);
@@ -460,7 +454,6 @@
             );
         };
         
-        // --- 교사 메뉴 컴포넌트들 ---
         const EditClassModal = ({ isOpen, onClose, classItem, onSave }) => {
             if (!isOpen) return null;
 
@@ -698,7 +691,6 @@
             );
         };
         
-        // --- 학생 메뉴 컴포넌트 ---
         const StudentInfo = ({ user, userData, setModalState, refreshUserData }) => {
             const [newPassword, setNewPassword] = useState('');
             const [classCode, setClassCode] = useState('');
@@ -772,7 +764,6 @@
             );
         };
         
-        // --- 신규/수정된 메뉴: 시험 점수 ---
         const StudentScoreCard = ({ studentScore, headers }) => {
             if (!studentScore) {
                 return (
@@ -1022,7 +1013,6 @@
             );
         };
 
-        // --- 신규 기능: 수행 점수 관리 ---
         const StudentPerformanceCard = ({ headers, studentRecord }) => {
             if (!studentRecord) {
                 return (
@@ -1032,29 +1022,33 @@
                 );
             }
 
+            const validHeaders = Array.isArray(headers) ? headers : [];
+
             return (
                 <div className="bg-white p-6 rounded-xl shadow-lg">
                     <div className="border-b pb-4 mb-6">
                         <h3 className="text-2xl font-bold text-gray-800">{studentRecord.name} <span className="text-lg font-medium text-gray-500">({studentRecord.studentId})</span></h3>
                     </div>
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[600px] border-collapse">
-                             <thead>
-                                <tr className="bg-gray-50">
-                                    {headers.map((header, index) => (
-                                        <th key={index} className="p-3 font-semibold text-center border-b">{header.name}</th>
+                        <table className="w-full min-w-[600px] border-collapse text-center">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    {validHeaders.map((header, index) => (
+                                        <th key={`name-${index}`} className="p-3 font-semibold border-b">{header.name}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    {headers.map((header, index) => (
-                                        <td key={index} className="p-3 text-center font-mono border-b">{header.perfectScore}</td>
+                                    {validHeaders.map((header, index) => (
+                                        <td key={`perfect-score-${index}`} className="p-3 font-mono border-b text-sm text-gray-600">{header.perfectScore}</td>
                                     ))}
                                 </tr>
                                 <tr className="bg-rose-50">
-                                    {studentRecord.scores.map((score, index) => (
-                                        <td key={index} className="p-3 text-center font-bold text-lg text-rose-600 font-mono">{score}</td>
+                                    {validHeaders.map((header, index) => (
+                                        <td key={`student-score-${index}`} className="p-3 font-bold text-2xl text-rose-600 font-mono">
+                                            {(studentRecord.scores && typeof studentRecord.scores[index] !== 'undefined') ? studentRecord.scores[index] : '-'}
+                                        </td>
                                     ))}
                                 </tr>
                             </tbody>
@@ -1070,7 +1064,6 @@
             const [error, setError] = useState(null);
             const [selectedStudentId, setSelectedStudentId] = useState('all');
 
-            // 교사 업로드용 상태
             const [grade, setGrade] = useState('');
             const [file, setFile] = useState(null);
             const [uploading, setUploading] = useState(false);
@@ -1078,6 +1071,7 @@
 
             useEffect(() => {
                 if (!selectedClass?.id) {
+                    setAssessmentData(null);
                     setLoading(false);
                     return;
                 }
@@ -1085,14 +1079,14 @@
                 const unsub = db.collection(CONSTANTS.COLLECTIONS.ASSESSMENTS).doc(selectedClass.id).onSnapshot(doc => {
                     if (doc.exists) {
                         setAssessmentData(doc.data());
-                        setError(null);
                     } else {
                         setAssessmentData(null);
                     }
+                    setError(null);
                     setLoading(false);
                 }, err => {
                     console.error(err);
-                    setError('데이터를 불러오는 중 오류가 발생했습니다. Firestore 보안 규칙을 확인해주세요.');
+                    setError('데이터를 불러오는 중 오류가 발생했습니다.');
                     setLoading(false);
                 });
 
@@ -1208,8 +1202,8 @@
             }
 
             if (isTeacher) {
-                const selectedStudentRecord = selectedStudentId !== 'all' 
-                    ? assessmentData?.scores.find(s => s.studentId === selectedStudentId)
+                const selectedStudentRecord = (assessmentData && selectedStudentId !== 'all')
+                    ? assessmentData.scores.find(s => s.studentId === selectedStudentId)
                     : null;
 
                 return (
@@ -1265,12 +1259,10 @@
                                         </select>
                                     </div>
                                 </div>
-                                {selectedStudentId === 'all' ? (
-                                    <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
-                                        <p className="text-center text-gray-500">전체 학생 점수 표가 여기에 표시됩니다.</p>
-                                    </div>
-                                ) : (
+                                {selectedStudentId !== 'all' && assessmentData.headers && selectedStudentRecord ? (
                                     <StudentPerformanceCard headers={assessmentData.headers} studentRecord={selectedStudentRecord} />
+                                ) : (
+                                    selectedStudentId !== 'all' && <div className="bg-white p-6 rounded-lg shadow-md"><p className="text-center text-gray-500">선택된 학생의 점수 정보를 불러올 수 없습니다.</p></div>
                                 )}
                             </div>
                         )}
@@ -1278,12 +1270,13 @@
                 );
             }
 
-            // 학생 뷰
             const studentRecord = assessmentData?.scores.find(s => s.studentId === userData.studentId);
+            const isDataReady = assessmentData && assessmentData.headers && studentRecord;
+
             return (
                 <div>
                      <h2 className="text-3xl font-bold mb-6 text-gray-800">나의 수행 점수</h2>
-                     {assessmentData ? 
+                     {isDataReady ? 
                         <StudentPerformanceCard headers={assessmentData.headers} studentRecord={studentRecord} /> :
                         <div className="bg-white p-8 rounded-lg shadow-md text-center">
                             <p className="text-gray-600">아직 이 학급의 수행평가 점수가 등록되지 않았습니다.</p>
@@ -1293,8 +1286,6 @@
             );
         };
 
-
-        // --- 대시보드 (통합 및 개선) ---
         const Dashboard = ({ user, initialUserData, onLogout }) => {
             const [userData, setUserData] = useState(initialUserData);
             const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
@@ -1365,10 +1356,10 @@
                                 const classList = classDocs.filter(doc => doc.exists).map(doc => ({ id: doc.id, ...doc.data() }));
                                 setClasses(classList);
                                  if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
-                                     setSelectedClassId(classList[0].id);
-                                } else if (classList.length === 0) {
-                                     setSelectedClassId('');
-                                }
+                                      setSelectedClassId(classList[0].id);
+                                 } else if (classList.length === 0) {
+                                      setSelectedClassId('');
+                                 }
                             } else {
                                 setClasses([]);
                                 setSelectedClassId('');
@@ -1571,7 +1562,7 @@
                             </div>
                         </div>
                         <div className="p-2 border-t border-gray-200 flex-shrink-0">
-                            <button onClick={onLogout} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 hover:bg-gray-200 ${!isSidebarExpanded && 'justify-center'}`} title={isSidebarExpanded ? '' : "로그아웃"}><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>{isSidebarExpanded && <span>로그아웃</span>}</button>
+                            <button onClick={onLogout} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 hover:bg-gray-200 ${!isSidebarExpanded && 'justify-center'}`} title={isSidebarExpanded ? '' : "로그아웃"}><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>{isSidebarExpanded && <span>로그아웃</span>}</button>
                         </div>
                     </aside>
                     <div className="flex-1 flex flex-col">
@@ -1582,7 +1573,6 @@
             );
         };
         
-        // --- 인증 및 메인 App ---
         const AuthForm = ({ title, buttonText, onSubmit, onSwitchToSignup, onBack, isTeacher }) => {
             const [field1, setField1] = useState('');
             const [password, setPassword] = useState('');
@@ -1768,6 +1758,7 @@
             const handleStudentSignUp = async (name, studentId, password, classCode, schoolAccountId) => {
                 setError('');
                 if (!/^\d{6,}$/.test(password)) { setError('비밀번호는 숫자 6자리 이상이어야 합니다.'); return; }
+                
                 try {
                     const q = db.collection(CONSTANTS.COLLECTIONS.CLASSES).where("classCode", "==", classCode.toUpperCase());
                     const querySnapshot = await q.get();
