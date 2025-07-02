@@ -817,7 +817,7 @@
                         <h3 className="text-xl font-bold mb-4">새 학급 추가</h3>
                         <form onSubmit={handleAddClass} className="flex flex-col md:flex-row gap-4 items-end">
                             <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급명</label><input type="text" value={className} onChange={e => setClassName(e.target.value)} placeholder="예: 1학년 1반" className="w-full mt-1 p-2 border rounded-md" /></div>
-                            <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급 코드 (6자리, 첫 글자는 영문)</label><input type="text" value={classCode} onChange={e => handleClassCodeChange(e.target.value)} maxLength={6} placeholder="예: A12345" className="w-full mt-1 p-2 border rounded-md" /></div>
+                            <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급 코드 (6자리, 첫 글자는 영문. 추후 변경 불가.)</label><input type="text" value={classCode} onChange={e => handleClassCodeChange(e.target.value)} maxLength={6} placeholder="예: A12345" className="w-full mt-1 p-2 border rounded-md" /></div>
                             <button type="submit" className="btn-sky w-full md:w-auto !px-6 !py-2">추가</button>
                         </form>
                     </div>
