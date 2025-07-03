@@ -1375,8 +1375,12 @@
                         {!assessmentData ? (
                             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                                 <h3 className="text-xl font-bold mb-4">점수 파일 업로드</h3>
-                                <span className="text-sm text-red-500">* 학년 선택 후, <b>나이스</b> 상의 '수행평가 점수관리' 일괄등록 파일 양식(.xlsx) 업로드</span>
+                                <span className="text-sm text-red-500">* <b>나이스</b> 상의 '수행평가 점수관리' 일괄등록 파일 양식(.xlsx) 업로드</span>
                                 <div className="grid md:grid-cols-3 gap-4 items-end">
+                                    <div className="w-full">
+                                        <label className="text-sm font-medium text-gray-600">엑셀 파일</label>
+                                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xlsx, .xls" className="w-full mt-1 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/>
+                                    </div>
                                     <div className="w-full">
                                         <label className="text-sm font-medium text-gray-600">학년 선택</label>
                                         <select value={grade} onChange={e => setGrade(e.target.value)} className="w-full mt-1 p-2 border rounded-md">
@@ -1385,10 +1389,6 @@
                                             <option value="2">2학년</option>
                                             <option value="3">3학년</option>
                                         </select>
-                                    </div>
-                                    <div className="w-full">
-                                        <label className="text-sm font-medium text-gray-600">엑셀 파일</label>
-                                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xlsx, .xls" className="w-full mt-1 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/>
                                     </div>
                                     <button onClick={handleUpload} disabled={uploading} className="btn-sky w-full !py-2">
                                         {uploading ? '업로드 중...' : '업로드'}
