@@ -913,10 +913,10 @@
             );
         };
 
-const StudentManagement = ({ students, pendingStudents, deleteStudent, approveStudent, rejectStudent, inviteStudent, classes, setModalState, selectedClass }) => {
+        const StudentManagement = ({ students, pendingStudents, deleteStudent, approveStudent, rejectStudent, inviteStudent, classes, setModalState, selectedClass }) => {
             const [invitingStudent, setInvitingStudent] = useState(null);
             
-            // --- 검색 기능을 위한 새로운 상태 추가 ---
+            // --- 검색 기능을 위한 상태 ---
             const [searchTerm, setSearchTerm] = useState('');
             const [isSearching, setIsSearching] = useState(false);
             const [searchResults, setSearchResults] = useState([]);
@@ -929,7 +929,6 @@ const StudentManagement = ({ students, pendingStudents, deleteStudent, approveSt
                 }
                 setIsSearching(true);
                 try {
-                    // 이름과 학번으로 동시에 검색
                     const nameQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS)
                         .where('name', '>=', searchTerm)
                         .where('name', '<=', searchTerm + '\uf8ff').get();
@@ -938,7 +937,6 @@ const StudentManagement = ({ students, pendingStudents, deleteStudent, approveSt
 
                     const [nameSnapshot, idSnapshot] = await Promise.all([nameQuery, idQuery]);
 
-                    // Map을 사용해 중복 결과 제거
                     const resultsMap = new Map();
                     nameSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
                     idSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
@@ -961,9 +959,7 @@ const StudentManagement = ({ students, pendingStudents, deleteStudent, approveSt
                     content: `'${studentToInvite.name}' 학생을 '${selectedClass.className}' 학급으로 초대하시겠습니까?`,
                     confirmText: "초대",
                     onConfirm: () => {
-                        // Dashboard에서 전달받은 inviteStudent 함수 실행
                         inviteStudent(studentToInvite, selectedClass.id);
-                        // 초대 후, 검색 결과 목록에서 버튼 상태를 '초대됨'으로 즉시 변경
                         setSearchResults(prev => prev.map(s =>
                             s.id === studentToInvite.id
                             ? { ...s, classIds: [...(s.classIds || []), selectedClass.id] }
@@ -973,7 +969,6 @@ const StudentManagement = ({ students, pendingStudents, deleteStudent, approveSt
                     }
                 });
             };
-
 
             return (
                 <div>
@@ -987,16 +982,56 @@ const StudentManagement = ({ students, pendingStudents, deleteStudent, approveSt
 
                     <h2 className="text-3xl font-bold mb-6 text-gray-800">학생 관리</h2>
                     
+                    {/* --- 가입 승인 대기 목록 (복원된 코드) --- */}
                     {pendingStudents.length > 0 && (
                         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                           {/* 가입 승인 대기 목록... */}
+                            <h3 className="text-xl font-bold mb-4">가입 승인 대기</h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left min-w-[600px]">
+                                    <thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">작업</th></tr></thead>
+                                    <tbody>
+                                        {pendingStudents.map(s => ( 
+                                            <tr key={s.id} className="border-b">
+                                                <td className="p-3">{s.name}</td>
+                                                <td className="p-3">{s.studentId || '미지정'}</td>
+                                                <td className="p-3">{s.schoolAccount}</td>
+                                                <td className="p-3 text-center flex gap-2 justify-center">
+                                                    <button onClick={() => rejectStudent(s.id)} className="btn-red !px-4 !py-1">거절</button>
+                                                    <button onClick={() => approveStudent(s.id)} className="btn-sky !px-4 !py-1">승인</button>
+                                                </td>
+                                            </tr> 
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
                     
+                    {/* --- 학급 학생 목록 (복원된 코드) --- */}
                     <div className="bg-white p-6 rounded-lg shadow-md">
-                       {/* 학급 학생 목록... */}
+                        <h3 className="text-xl font-bold mb-4">학급 학생 목록</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left min-w-[600px]">
+                                <thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">작업</th></tr></thead>
+                                <tbody>
+                                    {students.map(s => ( 
+                                        <tr key={s.id} className="border-b">
+                                            <td className="p-3">{s.name}</td>
+                                            <td className="p-3">{s.studentId}</td>
+                                            <td className="p-3">{s.schoolAccount}</td>
+                                            <td className="p-3 text-center flex gap-2 justify-center">
+                                                <button onClick={() => setInvitingStudent(s)} className="btn-green !px-4 !py-1">학급 초대</button>
+                                                <button onClick={() => deleteStudent(s)} className="btn-red !px-4 !py-1">학급에서 제외</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {students.length === 0 && <p className="text-center text-gray-500 py-8">소속된 학생이 없습니다.</p>}
+                        </div>
                     </div>
 
+                    {/* --- 전체 학생 검색 및 초대 기능 --- */}
                     <div className="bg-white p-6 rounded-lg shadow-md mt-8">
                         <h3 className="text-xl font-bold mb-4">전체 학생 검색 및 초대</h3>
                         <div className="flex flex-col md:flex-row gap-2 mb-4">
