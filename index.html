@@ -1795,7 +1795,7 @@
                             // Google 계정 이름이 '1234홍길동' 형식(4자리 학번)인지 확인
                             if (displayName && /^\d{4}/.test(displayName) && displayName.length > 4) {
                                 studentId = displayName.substring(0, 4); // 앞 4자리를 학번으로
-                                name = displayName.substring(4);      // 나머지 문자열을 이름으로
+                                name = displayName.substring(5);      // 나머지 문자열을 이름으로
                             }
                             
                             const newUserProfile = {
