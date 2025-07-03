@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; }
@@ -37,7 +38,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback, useRef } = React;
+        const { useState, useEffect, useMemo, useCallback, useRef, useReducer } = React;
 
         // --- 상수 및 Firebase 설정 ---
         const CONSTANTS = {
@@ -280,7 +281,7 @@
         };
         
         // --- 대시보드 관련 컴포넌트들 ---
-        const StudentSelector = ({ currentClassStudents, allSchoolStudents, selectedStudents, onStudentToggle, onSelectAll, onClearAll }) => {
+        const StudentSelector = ({ currentClassStudents, selectedStudents, onStudentToggle, onSelectAll, onClearAll }) => {
             const [searchTerm, setSearchTerm] = useState('');
             const [isSearching, setIsSearching] = useState(false);
             const [searchResults, setSearchResults] = useState([]);
@@ -341,7 +342,7 @@
             );
         };
 
-        const ScheduleFormModal = ({ isOpen, onClose, onSubmit, initialData, currentClassStudents, allSchoolStudents, setModalState }) => {
+        const ScheduleFormModal = ({ isOpen, onClose, onSubmit, initialData, currentClassStudents, setModalState }) => {
             const [schedule, setSchedule] = useState(initialData);
             const [isStudentSelectorOpen, setIsStudentSelectorOpen] = useState(false);
 
@@ -413,7 +414,7 @@
                                     <button onClick={handleSubmit} className="btn-sky">{schedule.id ? "수정" : "저장"}</button>
                                 </div>
                             </div>
-                            {isStudentSelectorOpen && <StudentSelector currentClassStudents={currentClassStudents} allSchoolStudents={allSchoolStudents} selectedStudents={schedule.relatedStudents} onStudentToggle={handleStudentToggle} onSelectAll={handleSelectAll} onClearAll={handleClearAll} />}
+                            {isStudentSelectorOpen && <StudentSelector currentClassStudents={currentClassStudents} selectedStudents={schedule.relatedStudents} onStudentToggle={handleStudentToggle} onSelectAll={handleSelectAll} onClearAll={handleClearAll} />}
                         </div>
                     </div>
                 </div>
@@ -449,7 +450,7 @@
             )
         };
 
-        const ScheduleCalendar = ({ classes, selectedClass, selectedClassId, students, allSchoolStudents, teacherId, isTeacher, setModalState: setAppModalState }) => {
+        const ScheduleCalendar = ({ classes, selectedClass, selectedClassId, students, teacherId, isTeacher, setModalState: setAppModalState }) => {
             const [currentDate, setCurrentDate] = useState(new Date());
             const [schedules, setSchedules] = useState([]);
             const [modalState, setModalState] = useState({ formOpen: false, detailOpen: false, initialData: null });
@@ -582,7 +583,7 @@
 
             return (
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                    {isTeacher && <ScheduleFormModal isOpen={modalState.formOpen} onClose={() => setModalState({ formOpen: false, detailOpen: false, initialData: null })} onSubmit={handleFormSubmit} initialData={modalState.initialData} currentClassStudents={students} allSchoolStudents={allSchoolStudents} setModalState={setAppModalState} />}
+                    {isTeacher && <ScheduleFormModal isOpen={modalState.formOpen} onClose={() => setModalState({ formOpen: false, detailOpen: false, initialData: null })} onSubmit={handleFormSubmit} initialData={modalState.initialData} currentClassStudents={students} setModalState={setAppModalState} />}
                     <ScheduleDetailModal isOpen={modalState.detailOpen} onClose={() => setModalState({ formOpen: false, detailOpen: false, initialData: null })} schedule={modalState.initialData} onEdit={handleEditClick} onDelete={handleDeleteRequest} isTeacher={isTeacher}/>
                     
                     <div className="mb-4">
@@ -641,12 +642,11 @@
                 </div>
             );
         };
-
+        
         const InviteStudentModal = ({ isOpen, onClose, student, classes, onInvite }) => {
             const [targetClassId, setTargetClassId] = useState('');
 
             useEffect(() => {
-                // 모달이 열릴 때마다 선택된 학급 ID 초기화
                 if (isOpen) {
                     setTargetClassId('');
                 }
@@ -654,7 +654,6 @@
 
             if (!isOpen || !student) return null;
 
-            // 학생이 아직 속하지 않은, 초대 가능한 학급 목록을 필터링합니다.
             const invitableClasses = classes.filter(c => !student.classIds.includes(c.id));
 
             const handleInvite = () => {
@@ -845,15 +844,6 @@
                 setEditingClass(classItem);
             };
 
-            const handleDeleteClick = (classItem) => {
-                setModalState({
-                    isOpen: true, isConfirm: true, title: '학급 삭제 확인',
-                    content: `'${classItem.className}' 학급을 정말로 삭제하시겠습니까? 학급에 속한 모든 학생 정보, 점수, 일정이 함께 삭제되며 복구할 수 없습니다.`,
-                    confirmText: '삭제',
-                    onConfirm: () => onDeleteClass(classItem.id)
-                });
-            };
-
             const handleClassCodeChange = (value) => {
                 const upperValue = value.toUpperCase();
                 let filteredValue = '';
@@ -895,8 +885,7 @@
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => handleEditClick(c)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-1 px-3 rounded-md">수정</button>
-                                        <button onClick={() => handleDeleteClick(c)} className="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold py-1 px-3 rounded-md">삭제</button>
-                                    </div>
+                                        <button onClick={() => onDeleteClass(c)} className="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold py-1 px-3 rounded-md">삭제</button>                                    </div>
                                 </div>
                             ))}
                             {classes.length === 0 && <p className="text-gray-500 text-center py-4">생성된 학급이 없습니다.</p>}
@@ -915,13 +904,10 @@
 
         const StudentManagement = ({ students, pendingStudents, deleteStudent, approveStudent, rejectStudent, inviteStudent, classes, setModalState, selectedClass }) => {
             const [invitingStudent, setInvitingStudent] = useState(null);
-            
-            // --- 검색 기능을 위한 상태 ---
             const [searchTerm, setSearchTerm] = useState('');
             const [isSearching, setIsSearching] = useState(false);
             const [searchResults, setSearchResults] = useState([]);
 
-            // --- 전체 학생을 검색하는 함수 ---
             const handleSearch = async () => {
                 if (!searchTerm.trim()) {
                     setSearchResults([]);
@@ -929,18 +915,12 @@
                 }
                 setIsSearching(true);
                 try {
-                    const nameQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS)
-                        .where('name', '>=', searchTerm)
-                        .where('name', '<=', searchTerm + '\uf8ff').get();
-                    const idQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS)
-                        .where('studentId', '==', searchTerm).get();
-
+                    const nameQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('name', '>=', searchTerm).where('name', '<=', searchTerm + '\uf8ff').get();
+                    const idQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('studentId', '==', searchTerm).get();
                     const [nameSnapshot, idSnapshot] = await Promise.all([nameQuery, idQuery]);
-
                     const resultsMap = new Map();
                     nameSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
                     idSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
-
                     setSearchResults(Array.from(resultsMap.values()));
                 } catch (error) {
                     console.error("Error searching students:", error);
@@ -950,21 +930,14 @@
                 }
             };
 
-            // --- 검색된 학생 초대 시 확인 모달을 띄우는 함수 ---
             const handleInviteClick = (studentToInvite) => {
                 setModalState({
-                    isOpen: true,
-                    isConfirm: true,
-                    title: "학급 초대 확인",
+                    isOpen: true, isConfirm: true, title: "학급 초대 확인",
                     content: `'${studentToInvite.name}' 학생을 '${selectedClass.className}' 학급으로 초대하시겠습니까?`,
                     confirmText: "초대",
                     onConfirm: () => {
                         inviteStudent(studentToInvite, selectedClass.id);
-                        setSearchResults(prev => prev.map(s =>
-                            s.id === studentToInvite.id
-                            ? { ...s, classIds: [...(s.classIds || []), selectedClass.id] }
-                            : s
-                        ));
+                        setSearchResults(prev => prev.map(s => s.id === studentToInvite.id ? { ...s, classIds: [...(s.classIds || []), selectedClass.id] } : s));
                         return true;
                     }
                 });
@@ -972,17 +945,9 @@
 
             return (
                 <div>
-                    <InviteStudentModal
-                        isOpen={!!invitingStudent}
-                        onClose={() => setInvitingStudent(null)}
-                        student={invitingStudent}
-                        classes={classes}
-                        onInvite={inviteStudent}
-                    />
-
+                    <InviteStudentModal isOpen={!!invitingStudent} onClose={() => setInvitingStudent(null)} student={invitingStudent} classes={classes} onInvite={inviteStudent} />
                     <h2 className="text-3xl font-bold mb-6 text-gray-800">학생 관리</h2>
                     
-                    {/* --- 가입 승인 대기 목록 (복원된 코드) --- */}
                     {pendingStudents.length > 0 && (
                         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                             <h3 className="text-xl font-bold mb-4">가입 승인 대기</h3>
@@ -1006,61 +971,28 @@
                             </div>
                         </div>
                     )}
-                    {/* --- 전체 학생 검색 및 초대 기능 --- */}
-                    <div className="bg-white p-6 rounded-lg shadow-md mt-8">
+                    
+                    <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                         <h3 className="text-xl font-bold mb-4">전체 학생 검색 및 초대</h3>
                         <div className="flex flex-col md:flex-row gap-2 mb-4">
-                            <input
-                                type="text"
-                                placeholder="학번 또는 이름으로 검색"
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                                className="w-full p-2 border rounded-md"
-                            />
-                            <button onClick={handleSearch} disabled={isSearching} className="btn-sky !px-6 !py-2">
-                                {isSearching ? '검색 중...' : '검색'}
-                            </button>
+                            <input type="text" placeholder="학번 또는 이름으로 검색" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="w-full p-2 border rounded-md"/>
+                            <button onClick={handleSearch} disabled={isSearching} className="btn-sky !px-6 !py-2">{isSearching ? '검색 중...' : '검색'}</button>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left min-w-[600px]">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="p-3">이름</th>
-                                        <th className="p-3">학번</th>
-                                        <th className="p-3">학교 계정</th>
-                                        <th className="p-3 text-center">초대</th>
-                                    </tr>
-                                </thead>
+                            <table className="w-full text-left min-w-[600px]"><thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">초대</th></tr></thead>
                                 <tbody>
-                                    {isSearching ? (
-                                        <tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 중...</td></tr>
-                                    ) : searchResults.length > 0 ? searchResults.map(s => {
+                                    {isSearching ? (<tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 중...</td></tr>) : searchResults.length > 0 ? searchResults.map(s => {
                                         const isAlreadyInClass = s.classIds?.includes(selectedClass.id);
                                         return (
-                                            <tr key={s.id} className="border-b">
-                                                <td className="p-3">{s.name}</td>
-                                                <td className="p-3">{s.studentId}</td>
-                                                <td className="p-3">{s.schoolAccount}</td>
-                                                <td className="p-3 text-center">
-                                                    <button
-                                                        onClick={() => handleInviteClick(s)}
-                                                        disabled={isAlreadyInClass}
-                                                        className={isAlreadyInClass ? "btn-gray !px-4 !py-1" : "btn-green !px-4 !py-1"}
-                                                    >
-                                                        {isAlreadyInClass ? '초대됨' : '초대'}
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    }) : (
-                                        <tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 결과가 없습니다.</td></tr>
-                                    )}
+                                            <tr key={s.id} className="border-b"><td className="p-3">{s.name}</td><td className="p-3">{s.studentId}</td><td className="p-3">{s.schoolAccount}</td>
+                                                <td className="p-3 text-center"><button onClick={() => handleInviteClick(s)} disabled={isAlreadyInClass} className={isAlreadyInClass ? "btn-gray !px-4 !py-1" : "btn-green !px-4 !py-1"}>{isAlreadyInClass ? '초대됨' : '초대'}</button></td>
+                                            </tr>);
+                                    }) : (<tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 결과가 없습니다.</td></tr>)}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    {/* --- 학급 학생 목록 (복원된 코드) --- */}
+
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h3 className="text-xl font-bold mb-4">학급 학생 목록</h3>
                         <div className="overflow-x-auto">
@@ -1088,23 +1020,14 @@
         };
 
         const StudentScoreCard = ({ studentScore, headers }) => {
-            if (!studentScore) {
-                return (
-                    <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                        <p className="text-gray-600">학생 점수 정보를 찾을 수 없습니다.</p>
-                    </div>
-                );
-            }
-
+            if (!studentScore) return <div className="bg-white p-8 rounded-lg shadow-md text-center"><p className="text-gray-600">학생 점수 정보를 찾을 수 없습니다.</p></div>;
             const scoreHeaders = headers.filter(h => h && h !== '학번' && h !== '이름' && h !== '총점' && h !== '번호' && h !== 'studentId');
             const totalScoreHeader = headers.find(h => h === '총점');
-
             return (
                 <div className="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
                     <div className="border-b pb-4 mb-6 flex justify-between items-baseline">
                         <h3 className="text-2xl font-bold text-gray-800">{studentScore['이름']} <span className="text-lg font-medium text-gray-500">({studentScore['studentId']})</span></h3>
                     </div>
-                    
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mb-8">
                         {scoreHeaders.map(header => (
                             <div key={header} className="flex justify-between items-center border-b py-2">
@@ -1113,7 +1036,6 @@
                             </div>
                         ))}
                     </div>
-
                     {totalScoreHeader && (
                         <div className="mt-8 pt-6 border-t-2 border-sky-500 flex justify-between items-center">
                             <span className="text-xl font-bold text-gray-800">{totalScoreHeader}</span>
@@ -1153,188 +1075,70 @@
 
             useEffect(() => {
                 if (!selectedClass?.googleSheetId) {
-                    setScoresData({ headers: [], rows: [] });
-                    setLoading(false);
-                    setError(null);
-                    return;
+                    setScoresData({ headers: [], rows: [] }); setLoading(false); setError(null); return;
                 }
                 
                 const fetchSheetData = async () => {
-                    setLoading(true);
-                    setError(null);
-                    
+                    setLoading(true); setError(null);
                     const SHEET_ID = selectedClass.googleSheetId;
                     const sheetName = selectedClass.className.replace(/[^0-9]/g, '');
                     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}&headers=1`;
-
                     try {
                         const res = await fetch(url);
                         if (!res.ok) throw new Error('시트 정보를 불러올 수 없습니다. 공유 설정을 확인해주세요.');
-                        
                         const text = await res.text();
                         const jsonString = text.substring(47).slice(0, -2);
                         const json = JSON.parse(jsonString);
-
                         if (json.status === 'error' || !json.table || !json.table.cols || json.table.rows.length < 2) {
-                            throw new Error(`시트 '${sheetName}'에 데이터가 없거나 형식이 올바르지 않습니다. (헤더 1행, 만점 2행, 데이터 3행부터)`);
+                            throw new Error(`시트 '${sheetName}'에 데이터가 없거나 형식이 올바르지 않습니다.`);
                         }
-
                         const headers = json.table.cols.map(col => col.label || col.id).filter(label => label);
                         const dataRows = json.table.rows.slice(1);
-                        
                         const rows = dataRows.map(row => {
                             const rowData = {};
                             if (row && row.c) {
-                                row.c.forEach((cell, idx) => {
-                                    if (headers[idx]) {
-                                        rowData[headers[idx]] = cell ? cell.v : null;
-                                    }
-                                });
+                                row.c.forEach((cell, idx) => { if (headers[idx]) { rowData[headers[idx]] = cell ? cell.v : null; } });
                             }
-                            
                             const studentNum = rowData['번호']?.toString().padStart(2, '0');
-                            if (studentNum) {
-                                rowData['studentId'] = `${sheetName}${studentNum}`;
-                            }
+                            if (studentNum) rowData['studentId'] = `${sheetName}${studentNum}`;
                             return rowData;
                         }).filter(row => row.studentId);
-
                         setScoresData({ headers, rows });
-
                     } catch(err) {
-                        console.error("Error fetching sheet:", err);
                         setError(err.message);
                     } finally {
                         setLoading(false);
                     }
                 };
-
                 fetchSheetData();
             }, [selectedClass]);
 
-            if (loading) {
-                return (
-                    <div>
-                        <h2 className="text-3xl font-bold mb-6 text-gray-800">시험 점수</h2>
-                        <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto"></div>
-                            <p className="mt-4 text-gray-600">데이터를 불러오는 중입니다...</p>
-                        </div>
-                    </div>
-                );
-            }
+            if (loading) return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">시험 점수</h2><div className="bg-white p-8 rounded-lg shadow-md text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto"></div><p className="mt-4 text-gray-600">데이터를 불러오는 중입니다...</p></div></div>;
             
             if (isTeacher && !selectedClass.googleSheetId) {
-                 return (
-                    <div>
-                        <h2 className="text-3xl font-bold mb-6 text-gray-800">시험 점수</h2>
-                        <div className="bg-white p-8 rounded-lg shadow-md">
-                            <h3 className="text-xl font-bold text-gray-700 mb-2">Google 시트 연동</h3>
-                            <p className="text-gray-500 mb-4">
-                                이 학급의 시험 점수를 관리할 Google 시트의 URL을 입력해주세요.
-                                <br/>
-                                <a href="https://docs.google.com/spreadsheets/d/1A4-3Df_UCruvAcZtavqHq8L5NvqZCBonQIb28t0wajw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline font-bold text-sm">
-                                  샘플 양식 시트 확인하기
-                                </a>
-                                <span className="text-sm text-red-500">* 시트는 '링크가 있는 모든 사용자에게' 뷰어로 공유되어야 합니다.</span>
-                            </p>
-                            <div className="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    value={sheetUrl}
-                                    onChange={e => setSheetUrl(e.target.value)}
-                                    className="w-full p-2 border rounded-md" 
-                                    placeholder="Google Sheets URL 붙여넣기"
-                                />
-                                <button onClick={handleLinkSheet} className="btn-sky !px-4 !py-2">연동하기</button>
-                            </div>
-                        </div>
-                    </div>
-                );
+                 return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">시험 점수</h2><div className="bg-white p-8 rounded-lg shadow-md"><h3 className="text-xl font-bold text-gray-700 mb-2">Google 시트 연동</h3><p className="text-gray-500 mb-4">이 학급의 시험 점수를 관리할 Google 시트의 URL을 입력해주세요.<br/><a href="https://docs.google.com/spreadsheets/d/1A4-3Df_UCruvAcZtavqHq8L5NvqZCBonQIb28t0wajw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline font-bold text-sm">샘플 양식 시트 확인하기</a><span className="text-sm text-red-500">* 시트는 '링크가 있는 모든 사용자에게' 뷰어로 공유되어야 합니다.</span></p><div className="flex gap-2"><input type="text" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} className="w-full p-2 border rounded-md" placeholder="Google Sheets URL 붙여넣기" /><button onClick={handleLinkSheet} className="btn-sky !px-4 !py-2">연동하기</button></div></div></div>;
             }
 
-            if (error) {
-                return (
-                    <div>
-                        <h2 className="text-3xl font-bold mb-6 text-gray-800">시험 점수</h2>
-                        <div className="bg-white p-8 rounded-lg shadow-md text-center text-red-500">
-                            <p>오류: {error}</p>
-                            {isTeacher && <button onClick={handleUnlinkSheet} className="btn-red !px-4 !py-2 mt-4">시트 연동 해제</button>}
-                        </div>
-                    </div>
-                );
-            }
+            if (error) return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">시험 점수</h2><div className="bg-white p-8 rounded-lg shadow-md text-center text-red-500"><p>오류: {error}</p>{isTeacher && <button onClick={handleUnlinkSheet} className="btn-red !px-4 !py-2 mt-4">시트 연동 해제</button>}</div></div>;
             
             if (isTeacher) {
-                const selectedStudentScore = selectedStudentId !== 'all' 
-                    ? scoresData.rows.find(row => row.studentId === selectedStudentId)
-                    : null;
-
+                const selectedStudentScore = selectedStudentId !== 'all' ? scoresData.rows.find(row => row.studentId === selectedStudentId) : null;
                 return (
                     <div>
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-3xl font-bold text-gray-800">시험 점수</h2>
-                            <button onClick={handleUnlinkSheet} className="btn-gray !px-4 !py-2">시트 연동 해제</button>
-                        </div>
-                        <div className="mb-6 max-w-sm">
-                            <label htmlFor="student-score-select" className="block text-sm font-medium text-gray-700 mb-1">학생 선택</label>
-                            <select 
-                                id="student-score-select"
-                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500"
-                                value={selectedStudentId} 
-                                onChange={e => setSelectedStudentId(e.target.value)}
-                            >
-                                <option value="all">전체 학생 표로 보기</option>
-                                {scoresData.rows.map(student => (
-                                    <option key={student.studentId} value={student.studentId}>
-                                        {student.이름} ({student.studentId})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
+                        <div className="flex justify-between items-center mb-6"><h2 className="text-3xl font-bold text-gray-800">시험 점수</h2><button onClick={handleUnlinkSheet} className="btn-gray !px-4 !py-2">시트 연동 해제</button></div>
+                        <div className="mb-6 max-w-sm"><label htmlFor="student-score-select" className="block text-sm font-medium text-gray-700 mb-1">학생 선택</label><select id="student-score-select" className="w-full p-2 border border-gray-300 rounded-md shadow-sm" value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)}><option value="all">전체 학생 표로 보기</option>{scoresData.rows.map(student => (<option key={student.studentId} value={student.studentId}>{student.이름} ({student.studentId})</option>))}</select></div>
                         {selectedStudentId === 'all' ? (
-                            <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
-                                <table className="w-full text-left min-w-[800px]">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            {scoresData.headers.map(header => (
-                                                <th key={header} className="p-3 font-bold text-center">{header}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {scoresData.rows.map((row, index) => (
-                                            <tr key={index} className="border-b hover:bg-gray-50">
-                                                {scoresData.headers.map(header => (
-                                                    <td key={header} className="p-3 font-mono text-center">{row[header]}</td>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <StudentScoreCard studentScore={selectedStudentScore} headers={scoresData.headers} />
-                        )}
+                            <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto"><table className="w-full text-left min-w-[800px]"><thead className="bg-gray-50"><tr>{scoresData.headers.map(header => (<th key={header} className="p-3 font-bold text-center">{header}</th>))}</tr></thead><tbody>{scoresData.rows.map((row, index) => (<tr key={index} className="border-b hover:bg-gray-50">{scoresData.headers.map(header => (<td key={header} className="p-3 font-mono text-center">{row[header]}</td>))}</tr>))}</tbody></table></div>
+                        ) : (<StudentScoreCard studentScore={selectedStudentScore} headers={scoresData.headers} />)}
                     </div>
                 );
             }
             
-            if (!userData || !userData.studentId) return <p>학생 정보를 불러올 수 없습니다.</p>;
-            
             const studentScore = scoresData.rows.find(row => row.studentId === userData.studentId);
-
             return (
                 <div>
                     <h2 className="text-3xl font-bold mb-6 text-gray-800">나의 시험 점수</h2>
-                    {studentScore ? (
-                        <StudentScoreCard studentScore={studentScore} headers={scoresData.headers} />
-                    ) : (
-                        <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                            <p className="text-gray-600">아직 이 학급의 시험 점수가 등록되지 않았습니다.</p>
-                        </div>
-                    )}
+                    {studentScore ? (<StudentScoreCard studentScore={studentScore} headers={scoresData.headers} />) : (<div className="bg-white p-8 rounded-lg shadow-md text-center"><p className="text-gray-600">아직 이 학급의 시험 점수가 등록되지 않았습니다.</p></div>)}
                 </div>
             );
         };
@@ -1347,9 +1151,7 @@
                     </div>
                 );
             }
-
             const validHeaders = Array.isArray(headers) ? headers : [];
-
             return (
                 <div className="bg-white p-6 rounded-xl shadow-lg">
                     <div className="border-b pb-4 mb-6">
@@ -1358,38 +1160,23 @@
                     <div className="overflow-x-auto">
                         <table className="w-full min-w-[600px] border-collapse text-center">
                             <thead className="bg-gray-50">
-                                <tr>
-                                    {validHeaders.map((header, index) => (
-                                        <th key={`name-${index}`} className="p-3 font-semibold border-b">{header.name}</th>
-                                    ))}
-                                </tr>
+                                <tr>{validHeaders.map((header, index) => (<th key={`name-${index}`} className="p-3 font-semibold border-b">{header.name}</th>))}</tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    {validHeaders.map((header, index) => (
-                                        <td key={`perfect-score-${index}`} className="p-3 font-mono border-b text-sm text-gray-600">{header.perfectScore}</td>
-                                    ))}
-                                </tr>
-                                <tr className="bg-rose-50">
-                                    {validHeaders.map((header, index) => (
-                                        <td key={`student-score-${index}`} className="p-3 font-bold text-2xl text-rose-600 font-mono">
-                                            {(studentRecord.scores && typeof studentRecord.scores[index] !== 'undefined') ? studentRecord.scores[index] : '-'}
-                                        </td>
-                                    ))}
-                                </tr>
+                                <tr>{validHeaders.map((header, index) => (<td key={`perfect-score-${index}`} className="p-3 font-mono border-b text-sm text-gray-600">{header.perfectScore}</td>))}</tr>
+                                <tr className="bg-rose-50">{validHeaders.map((header, index) => (<td key={`student-score-${index}`} className="p-3 font-bold text-2xl text-rose-600 font-mono">{(studentRecord.scores && typeof studentRecord.scores[index] !== 'undefined') ? studentRecord.scores[index] : '-'}</td>))}</tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             );
-        };      
+        };  
 
         const PerformanceScoreManager = ({ isTeacher, userData, selectedClass, setModalState }) => {
             const [assessmentData, setAssessmentData] = useState(null);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const [selectedStudentId, setSelectedStudentId] = useState('all');
-
             const [grade, setGrade] = useState('');
             const [file, setFile] = useState(null);
             const [uploading, setUploading] = useState(false);
@@ -1397,49 +1184,28 @@
 
             useEffect(() => {
                 if (!selectedClass?.id) {
-                    setAssessmentData(null);
-                    setLoading(false);
-                    return;
+                    setAssessmentData(null); setLoading(false); return;
                 }
                 setLoading(true);
                 const unsub = db.collection(CONSTANTS.COLLECTIONS.ASSESSMENTS).doc(selectedClass.id).onSnapshot(doc => {
-                    if (doc.exists) {
-                        setAssessmentData(doc.data());
-                    } else {
-                        setAssessmentData(null);
-                    }
-                    setError(null);
-                    setLoading(false);
-                }, err => {
-                    console.error(err);
-                    setError('데이터를 불러오는 중 오류가 발생했습니다.');
-                    setLoading(false);
-                });
-
+                    if (doc.exists) { setAssessmentData(doc.data()); } else { setAssessmentData(null); }
+                    setError(null); setLoading(false);
+                }, err => { setError('데이터를 불러오는 중 오류가 발생했습니다.'); setLoading(false); });
                 return () => unsub();
             }, [selectedClass?.id]);
 
             const handleFileChange = (e) => {
                 const f = e.target.files[0];
-                if (f && (f.name.endsWith('.xlsx') || f.name.endsWith('.xls'))) {
-                    setFile(f);
-                } else {
+                if (f && (f.name.endsWith('.xlsx') || f.name.endsWith('.xls'))) { setFile(f); } 
+                else {
                     setModalState({ isOpen: true, title: '파일 형식 오류', content: '엑셀 파일(.xlsx, .xls)만 업로드할 수 있습니다.' });
-                    setFile(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
+                    setFile(null); if (fileInputRef.current) fileInputRef.current.value = "";
                 }
             };
 
             const handleUpload = () => {
-                if (!file) {
-                    setModalState({ isOpen: true, title: '파일 없음', content: '업로드할 엑셀 파일을 선택해주세요.' });
-                    return;
-                }
-                if (!grade) {
-                    setModalState({ isOpen: true, title: '학년 미선택', content: '점수를 등록할 학년을 선택해주세요.' });
-                    return;
-                }
-
+                if (!file) { setModalState({ isOpen: true, title: '파일 없음', content: '업로드할 엑셀 파일을 선택해주세요.' }); return; }
+                if (!grade) { setModalState({ isOpen: true, title: '학년 미선택', content: '점수를 등록할 학년을 선택해주세요.' }); return; }
                 setUploading(true);
                 const reader = new FileReader();
                 reader.onload = async (e) => {
@@ -1449,89 +1215,45 @@
                         const sheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[sheetName];
                         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-
                         if (jsonData.length < 4) throw new Error("엑셀 파일의 형식이 올바르지 않습니다. (최소 4줄 필요)");
                         
-                        const headerRow = jsonData[0]; 
-                        const perfectScoreRow = jsonData[1]; 
-                        const studentDataRows = jsonData.slice(3);
-
-                        const assessmentHeaders = [];
-                        const scoreColumnIndices = [];
+                        const headerRow = jsonData[0]; const perfectScoreRow = jsonData[1]; const studentDataRows = jsonData.slice(3);
+                        const assessmentHeaders = []; const scoreColumnIndices = [];
                         headerRow.forEach((header, index) => {
                             if (index > 3 && header && header.toString().trim() !== "") {
-                                assessmentHeaders.push({
-                                    name: header.toString(),
-                                    perfectScore: perfectScoreRow[index]?.toString() || 'N/A'
-                                });
+                                assessmentHeaders.push({ name: header.toString(), perfectScore: perfectScoreRow[index]?.toString() || 'N/A' });
                                 scoreColumnIndices.push(index);
                             }
                         });
-
                         const studentScores = studentDataRows.map(row => {
-                            const classNum = row[1]?.toString(); 
-                            const studentNum = row[2]?.toString();
-                            const studentName = row[3]?.toString();
-
+                            const classNum = row[1]?.toString(); const studentNum = row[2]?.toString(); const studentName = row[3]?.toString();
                             if (!classNum || !studentNum || !studentName) return null;
-
-                            return {
-                                studentId: `${grade}${classNum}${studentNum.padStart(2, '0')}`,
-                                name: studentName,
-                                scores: scoreColumnIndices.map(colIndex => row[colIndex]?.toString() || '-')
-                            };
+                            return { studentId: `${grade}${classNum}${studentNum.padStart(2, '0')}`, name: studentName, scores: scoreColumnIndices.map(colIndex => row[colIndex]?.toString() || '-') };
                         }).filter(Boolean);
 
-                        const dataToSave = {
-                            grade: grade,
-                            fileName: file.name,
-                            uploadedAt: new Date().toISOString(),
-                            headers: assessmentHeaders,
-                            scores: studentScores
-                        };
-
+                        const dataToSave = { grade, fileName: file.name, uploadedAt: new Date().toISOString(), headers: assessmentHeaders, scores: studentScores };
                         await db.collection(CONSTANTS.COLLECTIONS.ASSESSMENTS).doc(selectedClass.id).set(dataToSave);
                         setModalState({ isOpen: true, title: '업로드 성공', content: '수행평가 점수를 성공적으로 등록했습니다.' });
-                        setFile(null);
-                        setGrade('');
-                        if (fileInputRef.current) fileInputRef.current.value = "";
-
+                        setFile(null); setGrade(''); if (fileInputRef.current) fileInputRef.current.value = "";
                     } catch (err) {
-                        console.error("Upload error:", err);
                         setModalState({ isOpen: true, title: '업로드 실패', content: `파일 처리 중 오류가 발생했습니다: ${err.message}` });
-                    } finally {
-                        setUploading(false);
-                    }
+                    } finally { setUploading(false); }
                 };
                 reader.readAsArrayBuffer(file);
             };
 
             const handleDelete = () => {
                 setModalState({
-                    isOpen: true,
-                    isConfirm: true,
-                    title: "점수 삭제 확인",
-                    content: `이 학급의 모든 수행평가 점수 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-                    confirmText: '삭제',
-                    onConfirm: async () => {
-                        await db.collection(CONSTANTS.COLLECTIONS.ASSESSMENTS).doc(selectedClass.id).delete();
-                        setModalState({ isOpen: true, title: '삭제 완료', content: '점수 데이터가 삭제되었습니다.' });
-                    }
+                    isOpen: true, isConfirm: true, title: "점수 삭제 확인", content: `이 학급의 모든 수행평가 점수 데이터를 삭제하시겠습니까?`, confirmText: '삭제',
+                    onConfirm: async () => { await db.collection(CONSTANTS.COLLECTIONS.ASSESSMENTS).doc(selectedClass.id).delete(); return true; }
                 });
             };
 
-            if (loading) {
-                return <div className="h-64 w-full skeleton"></div>;
-            }
-            if (error) {
-                return <div className="bg-red-100 text-red-700 p-4 rounded-lg">{error}</div>;
-            }
+            if (loading) return <div className="h-64 w-full skeleton"></div>;
+            if (error) return <div className="bg-red-100 text-red-700 p-4 rounded-lg">{error}</div>;
 
             if (isTeacher) {
-                const selectedStudentRecord = (assessmentData && selectedStudentId !== 'all')
-                    ? assessmentData.scores.find(s => s.studentId === selectedStudentId)
-                    : null;
-
+                const selectedStudentRecord = (assessmentData && selectedStudentId !== 'all') ? assessmentData.scores.find(s => s.studentId === selectedStudentId) : null;
                 return (
                     <div>
                         <h2 className="text-3xl font-bold mb-6 text-gray-800">수행 점수 관리</h2>
@@ -1539,23 +1261,10 @@
                             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                                 <h3 className="text-xl font-bold mb-4">점수 파일 업로드</h3>
                                 <span className="text-sm text-red-500">* <b>나이스</b> 상의 '수행평가 점수관리' 일괄등록 파일 양식(.xlsx) 업로드</span>
-                                <div className="grid md:grid-cols-3 gap-4 items-end">
-                                    <div className="w-full">
-                                        <label className="text-sm font-medium text-gray-600">엑셀 파일</label>
-                                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xlsx, .xls" className="w-full mt-1 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/>
-                                    </div>
-                                    <div className="w-full">
-                                        <label className="text-sm font-medium text-gray-600">학년 선택</label>
-                                        <select value={grade} onChange={e => setGrade(e.target.value)} className="w-full mt-1 p-2 border rounded-md">
-                                            <option value="">-- 학년 --</option>
-                                            <option value="1">1학년</option>
-                                            <option value="2">2학년</option>
-                                            <option value="3">3학년</option>
-                                        </select>
-                                    </div>
-                                    <button onClick={handleUpload} disabled={uploading} className="btn-sky w-full !py-2">
-                                        {uploading ? '업로드 중...' : '업로드'}
-                                    </button>
+                                <div className="grid md:grid-cols-3 gap-4 items-end mt-2">
+                                    <div className="w-full"><label className="text-sm font-medium text-gray-600">엑셀 파일</label><input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xlsx, .xls" className="w-full mt-1 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/></div>
+                                    <div className="w-full"><label className="text-sm font-medium text-gray-600">학년 선택</label><select value={grade} onChange={e => setGrade(e.target.value)} className="w-full mt-1 p-2 border rounded-md"><option value="">-- 학년 --</option><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></div>
+                                    <button onClick={handleUpload} disabled={uploading} className="btn-sky w-full !py-2">{uploading ? '업로드 중...' : '업로드'}</button>
                                 </div>
                             </div>
                         ) : (
@@ -1569,28 +1278,9 @@
                                         </div>
                                         <button onClick={handleDelete} className="btn-red !px-4 !py-2">데이터 삭제</button>
                                     </div>
-                                    <div className="max-w-sm">
-                                        <label htmlFor="student-perf-select" className="block text-sm font-medium text-gray-700 mb-1">학생 선택</label>
-                                        <select 
-                                            id="student-perf-select"
-                                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500"
-                                            value={selectedStudentId} 
-                                            onChange={e => setSelectedStudentId(e.target.value)}
-                                        >
-                                            <option value="all">전체 학생 표로 보기</option>
-                                            {assessmentData.scores.map(student => (
-                                                <option key={student.studentId} value={student.studentId}>
-                                                    {student.name} ({student.studentId})
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <div className="max-w-sm"><label htmlFor="student-perf-select" className="block text-sm font-medium text-gray-700 mb-1">학생 선택</label><select id="student-perf-select" className="w-full p-2 border rounded-md" value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)}><option value="all">전체 학생 표로 보기</option>{assessmentData.scores.map(student => (<option key={student.studentId} value={student.studentId}>{student.name} ({student.studentId})</option>))}</select></div>
                                 </div>
-                                {selectedStudentId !== 'all' && assessmentData.headers && selectedStudentRecord ? (
-                                    <StudentPerformanceCard headers={assessmentData.headers} studentRecord={selectedStudentRecord} />
-                                ) : (
-                                    selectedStudentId !== 'all' && <div className="bg-white p-6 rounded-lg shadow-md"><p className="text-center text-gray-500">선택된 학생의 점수 정보를 불러올 수 없습니다.</p></div>
-                                )}
+                                {selectedStudentId !== 'all' && (selectedStudentRecord ? <StudentPerformanceCard headers={assessmentData.headers} studentRecord={selectedStudentRecord} /> : <div className="bg-white p-6 rounded-lg shadow-md"><p className="text-center text-gray-500">선택된 학생의 점수 정보를 불러올 수 없습니다.</p></div>)}
                             </div>
                         )}
                     </div>
@@ -1598,20 +1288,649 @@
             }
 
             const studentRecord = assessmentData?.scores.find(s => s.studentId === userData.studentId);
-            const isDataReady = assessmentData && assessmentData.headers && studentRecord;
-
             return (
                 <div>
-                     <h2 className="text-3xl font-bold mb-6 text-gray-800">나의 수행 점수</h2>
-                     {isDataReady ? 
-                        <StudentPerformanceCard headers={assessmentData.headers} studentRecord={studentRecord} /> :
-                        <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                            <p className="text-gray-600">아직 이 학급의 수행평가 점수가 등록되지 않았습니다.</p>
-                        </div>
-                     }
+                    <h2 className="text-3xl font-bold mb-6 text-gray-800">나의 수행 점수</h2>
+                    {studentRecord ? <StudentPerformanceCard headers={assessmentData.headers} studentRecord={studentRecord} /> : <div className="bg-white p-8 rounded-lg shadow-md text-center"><p className="text-gray-600">아직 이 학급의 수행평가 점수가 등록되지 않았습니다.</p></div>}
                 </div>
             );
         };
+
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★★★           랜덤 팀 구성 컴포넌트 시작           ★★★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+        const createTeamLayout = (_0x25a3d4,_0x42969f,_0x1f0e8a,_0x4f7f63)=>{var _0x573e04=["\x6D\x65\x6D\x62\x65\x72\x73","\x6C\x65\x6E\x67\x74\x68","\x72\x65\x64\x75\x63\x65","\x70\x75\x73\x68","\x69\x64","\x73\x6F\x72\x74","\x66\x6F\x72\x45\x61\x63\x68","\x66\x69\x6C\x74\x65\x72","\x68\x61\x73","\x75\x6E\x73\x68\x69\x66\x74","\x72\x61\x6E\x64\x6F\x6D","\x66\x72\x6F\x6D","\x66\x69\x6E\x64","\x73\x6F\x6D\x65"];const _0x1a8f9c=_0x25a3d4[_0x573e04[7]](_0x2c6a46=>_0x1f0e8a[_0x573e04[8]](_0x2c6a46[_0x573e04[4]])),_0x253b9a=_0x25a3d4[_0x573e04[7]](_0x33b934=>!_0x1f0e8a[_0x573e04[8]](_0x33b934[_0x573e04[4]])),_0x4b78c4=[..._0x253b9a][_0x573e04[5]](()=>Math[_0x573e04[10]]()-0.5),_0x15392e=Array[_0x573e04[11]]({length:_0x42969f},(_0x1b41c3,_0x4d16fe)=>({id:_0x4d16fe,members:[]}));return _0x1a8f9c[_0x573e04[6]](_0x3e4509=>{const _0x5bf5c0=_0x4f7f63[_0x573e04[12]](_0x2a3e0f=>_0x2a3e0f[_0x573e04[0]][_0x573e04[13]](_0x599f57=>_0x599f57[_0x573e04[4]]===_0x3e4509[_0x573e04[4]]));_0x5bf5c0&&_0x5bf5c0[_0x573e04[4]]<_0x42969f?_0x15392e[_0x5bf5c0[_0x573e04[4]]][_0x573e04[0]][_0x573e04[3]](_0x3e4509):_0x4b78c4[_0x573e04[9]](_0x3e4509)}),_0x4b78c4[_0x573e04[6]](_0x280e2f=>{const _0x597f8c=_0x15392e[_0x573e04[2]]((_0x26c04e,_0x247547)=>_0x26c04e[_0x573e04[0]][_0x573e04[1]]<=_0x247547[_0x573e04[0]][_0x573e04[1]]?_0x26c04e:_0x247547);_0x597f8c[_0x573e04[0]][_0x573e04[3]](_0x280e2f)}),_0x15392e[_0x573e04[6]](_0x303bb2=>_0x303bb2[_0x573e04[0]][_0x573e04[5]]((_0x111649,_0x3f9e8a)=>_0x111649.studentId - _0x3f9e8a.studentId)),_0x15392e};
+            
+        const createInitialTeamState = () => ({
+            students: Array.from({ length: 28 }, (_, i) => ({ id: `manual-${i + 1}`, name: `학생 ${i + 1}`, studentId: i + 1 })),
+            teams: [],
+            teamCount: 6,
+            fixedStudentIds: new Set(),
+        });
+
+        const teamReducer = (state, action) => {
+            switch (action.type) {
+                case 'LOAD_STUDENTS':
+                    return { ...state, teams:[], fixedStudentIds: new Set(), students: action.payload };
+                case 'RESET_TO_MANUAL': 
+                    return createInitialTeamState();
+                case 'SET_TEAM_COUNT':
+                    return { ...state, teamCount: action.payload };
+                case 'GENERATE_TEAMS': {
+                    const { students, teamCount, fixedStudentIds, teams: oldTeams } = state;
+                    if (students.length === 0 || teamCount < 1) return state;
+                    const newTeams = createTeamLayout(students, teamCount, fixedStudentIds, oldTeams);
+                    return { ...state, teams: newTeams };
+                }
+                case 'SORT_TEAMS': {
+                    const sortedTeams = state.teams.map(team => ({...team, members: [...team.members].sort((a, b) => a.studentId - b.studentId)}));
+                    return { ...state, teams: sortedTeams };
+                }
+                case 'TOGGLE_FIXED_STUDENT': {
+                    const studentId = action.payload;
+                    const newFixedIds = new Set(state.fixedStudentIds);
+                    newFixedIds.has(studentId) ? newFixedIds.delete(studentId) : newFixedIds.add(studentId);
+                    return { ...state, fixedStudentIds: newFixedIds };
+                }
+                case 'SWAP_STUDENTS': {
+                    const { studentAId, studentBId } = action.payload;
+                    if (!studentAId || !studentBId || studentAId === studentBId) return state;
+                    const newTeams = state.teams.map(team => ({ ...team, members: [...team.members] }));
+                    let studentAInfo = null, studentBInfo = null;
+                    newTeams.forEach(t => t.members.forEach((s, idx) => {
+                        if (s.id === studentAId) studentAInfo = { student: s, team: t, index: idx };
+                        if (s.id === studentBId) studentBInfo = { student: s, team: t, index: idx };
+                    }));
+                    if (studentAInfo && studentBInfo) {
+                        studentAInfo.team.members[studentAInfo.index] = studentBInfo.student;
+                        studentBInfo.team.members[studentBInfo.index] = studentAInfo.student;
+                    }
+                    return { ...state, teams: newTeams };
+                }
+                case 'UPDATE_STUDENT': {
+                    const { id, field, value } = action.payload;
+                    const updatedStudents = state.students.map(s => (s.id === id ? { ...s, [field]: value } : s));
+                    return { ...state, students: updatedStudents };
+                }
+                case 'ADD_STUDENT': {
+                    const existingIds = state.students.map(s => s.studentId);
+                    let newStudentId = 1;
+                    while(existingIds.includes(newStudentId)) { newStudentId++; }
+                    return { ...state, students: [...state.students, { id: `manual-${newStudentId}`, studentId: newStudentId, name: "새 학생" }]};
+                }
+                case 'DELETE_STUDENT': {
+                    const studentIdToDelete = action.payload;
+                    const newFixedIds = new Set(state.fixedStudentIds);
+                    newFixedIds.delete(studentIdToDelete);
+                    return {
+                        ...state,
+                        students: state.students.filter(s => s.id !== studentIdToDelete),
+                        teams: state.teams.map(team => ({ ...team, members: team.members.filter(s => s.id !== studentIdToDelete) })),
+                        fixedStudentIds: newFixedIds
+                    };
+                }
+                default: return state;
+            }
+        };
+
+        const TeamBuilder = ({ students: propStudents, setModalState }) => {
+            const [useClassData, setUseClassData] = useState(true);
+            const [state, dispatch] = useReducer(teamReducer, undefined, createInitialTeamState);
+
+            useEffect(() => {
+                if (useClassData && propStudents) {
+                    const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
+                    dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
+                }
+            }, [propStudents, useClassData]);
+
+            const handleModeChange = (e) => {
+                const isFileMode = e.target.checked;
+                setUseClassData(!isFileMode);
+                if (isFileMode) {
+                    dispatch({ type: 'RESET_TO_MANUAL' });
+                } else {
+                    const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
+                    dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
+                }
+            };
+            
+            const handleGenerateTeams = () => {
+                if (state.students.length === 0) { setModalState({isOpen: true, title: "알림", content: "학생이 없습니다. 명단을 추가하거나 파일을 불러와 주세요."}); return; }
+                if (state.teamCount < 1) { setModalState({isOpen: true, title: "알림", content: "팀 개수는 1 이상이어야 합니다."}); return; }
+
+                if (state.teams.length > 0) {
+                    setModalState({ isOpen: true, isConfirm: true, title: "팀 다시 나누기", content: "팀을 다시 나누면 현재 팀 구성이 사라집니다 (팀 리더는 유지). 계속하시겠습니까?", onConfirm: () => { dispatch({ type: 'GENERATE_TEAMS' }); return true; } });
+                } else {
+                    dispatch({ type: 'GENERATE_TEAMS' });
+                }
+            };
+
+            const StudentListForTeamBuilder = () => {
+                const fileInputRef = useRef(null);
+                const [isComposing, setIsComposing] = useState(false);
+                
+                const saveDataToFile = () => {
+                    try {
+                        const dataToSave = { students: state.students.map(({name, studentId}) => ({id: studentId, name})) };
+                        const dataStr = JSON.stringify(dataToSave, null, 2);
+                        const blob = new Blob([dataStr], {type: "text/plain;charset=utf-8"});
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = '팀구성_학생명단.txt';
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    } catch (error) { setModalState({isOpen: true, title: "오류", content: "데이터 저장에 실패했습니다."}); }
+                };
+
+                const loadDataFromFile = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) { event.target.value = null; return; };
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.students && Array.isArray(data.students)) {
+                                const formattedStudents = data.students.map(s => ({
+                                    id: `manual-${s.id}`, 
+                                    name: s.name, 
+                                    studentId: s.id 
+                                }));
+                                dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
+                            } else { setModalState({isOpen: true, title: "오류", content: "파일에 올바른 학생 명단 정보가 없습니다."}); }
+                        } catch (error) { setModalState({isOpen: true, title: "오류", content: "파일을 읽는 데 실패했습니다. 올바른 형식의 파일인지 확인해 주세요."});
+                        } finally { event.target.value = null; }
+                    };
+                    reader.readAsText(file);
+                };
+                
+                const handleDelete = (studentId) => {
+                    const student = state.students.find(s => s.id === studentId);
+                    setModalState({ isOpen: true, isConfirm: true, title: "학생 삭제", content: `'${student.name}' 학생을 삭제하시겠습니까?`, onConfirm: () => { dispatch({ type: 'DELETE_STUDENT', payload: studentId }); return true; }});
+                };
+
+                const handleIdUpdate = (id, value) => {
+                    const newValue = parseInt(value, 10);
+                    if (isNaN(newValue) || newValue < 1) { setModalState({isOpen: true, title: '오류', content:'유효하지 않은 번호입니다.'}); return; }
+                    if (state.students.some(s => s.studentId === newValue && s.id !== id)) { setModalState({isOpen: true, title: '오류', content:'이미 사용 중인 번호입니다.'}); return; }
+                    dispatch({ type: 'UPDATE_STUDENT', payload: { id, field: 'studentId', value: newValue }});
+                };
+                
+                const handleNameChange = (id, value) => {
+                    if (isComposing) return;
+                    dispatch({ type: 'UPDATE_STUDENT', payload: { id, field: 'name', value } });
+                };
+
+                return (
+                    <aside className="mt-8 bg-white p-4 rounded-xl shadow-md flex flex-col">
+                        <input type="file" ref={fileInputRef} id="teamFileLoader" accept=".txt" style={{display: 'none'}} onChange={loadDataFromFile} />
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold text-gray-800">학생 명단 관리 (파일 모드)</h3>
+                            <div className="flex gap-2"><button onClick={() => fileInputRef.current.click()} className="btn-gray !text-xs !py-1 !px-2">불러오기</button><button onClick={saveDataToFile} className="btn-gray !text-xs !py-1 !px-2">저장하기</button></div>
+                        </div>
+                        <div className="overflow-auto border rounded-lg" style={{maxHeight: '400px'}}>
+                            <table className="min-w-full">
+                                <thead className="bg-gray-50 sticky top-0"><tr><th className="px-3 py-2 text-xs text-center w-20">번호</th><th className="px-3 py-2 text-xs text-left">이름</th><th className="px-3 py-2 w-10"></th></tr></thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {state.students.sort((a,b) => a.studentId - b.studentId).map(student => (
+                                        <tr key={student.id}>
+                                            <td className="px-3 py-1 text-center"><input type="number" defaultValue={student.studentId} onBlur={e => handleIdUpdate(student.id, e.target.value)} className="w-full text-center bg-transparent rounded focus:bg-yellow-50 outline-none"/></td>
+                                            <td className="px-3 py-1">
+                                                <input 
+                                                    key={student.name} // defaultValue를 업데이트하기 위해 key 추가
+                                                    type="text" 
+                                                    defaultValue={student.name} 
+                                                    className="w-full bg-transparent rounded focus:bg-yellow-50 outline-none"
+                                                    onCompositionStart={() => setIsComposing(true)}
+                                                    onCompositionEnd={(e) => {
+                                                        setIsComposing(false);
+                                                        handleNameChange(student.id, e.target.value);
+                                                    }}
+                                                    onChange={(e) => handleNameChange(student.id, e.target.value)}
+                                                    onBlur={(e) => handleNameChange(student.id, e.target.value)}
+                                                />
+                                            </td>
+                                            <td className="px-3 py-1 text-center"><button onClick={() => handleDelete(student.id)} className="text-red-500 hover:text-red-700 p-1 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button onClick={() => dispatch({ type: 'ADD_STUDENT' })} className="w-full text-xl text-blue-500 hover:bg-blue-100 font-bold p-1 rounded-lg mt-2">+</button>
+                    </aside>
+                );
+            };
+
+            return (
+                <div>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-3xl font-bold text-gray-800">🎲 랜덤 팀 구성</h2>
+                        <div className="flex items-center gap-3">
+                            <span className={`text-sm font-semibold ${useClassData ? 'text-green-600' : 'text-gray-400'}`}>현재 학급 명단 사용</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" onChange={handleModeChange} checked={!useClassData} className="sr-only peer" />
+                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                            </label>
+                            <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
+                        </div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-xl shadow-md mb-8">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <input type="number" value={state.teamCount} onChange={(e) => dispatch({ type: 'SET_TEAM_COUNT', payload: parseInt(e.target.value, 10) || 1 })} className="w-24 p-2 border border-gray-300 rounded-md text-center" min="1" />
+                                <label className="font-semibold text-gray-700 whitespace-nowrap">개 팀으로 나누기</label>
+                            </div>
+                            <button onClick={handleGenerateTeams} className="btn-green w-full sm:w-auto">✨ 팀 나누기!</button>
+                            {state.teams.length > 0 && <button onClick={() => dispatch({ type: 'SORT_TEAMS' })} className="btn-gray">번호순 재정렬</button>}
+                        </div>
+                    </div>
+
+                    {state.teams.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                            {state.teams.map((team, index) => (
+                                <div key={team.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-md">
+                                    <h3 className="font-bold text-lg text-gray-700 mb-3 text-center pb-2 border-b border-slate-300">{index + 1}팀 ({team.members.length}명)</h3>
+                                    <div className="space-y-2">
+                                        {team.members.map(student => (
+                                            <div key={student.id} className={`relative w-full border rounded-lg shadow-sm px-2 py-1 h-11 flex items-center gap-1 ${state.fixedStudentIds.has(student.id) ? 'bg-yellow-100 border-yellow-300' : 'bg-white border-gray-200'}`}>
+                                                <button onClick={() => dispatch({type: 'TOGGLE_FIXED_STUDENT', payload: student.id })} title="팀원 고정/해제" className="flex-shrink-0 text-2xl">{state.fixedStudentIds.has(student.id) ? '👑' : '☑️'}</button>
+                                                <div className="font-bold text-xs w-8 text-center">{student.studentId}.</div>
+                                                <div className="flex-1 font-medium text-sm truncate">{student.name}</div>
+                                                <div className="w-20 shrink-0">
+                                                    <select onChange={(e) => dispatch({type: 'SWAP_STUDENTS', payload: { studentAId: student.id, studentBId: e.target.value }})} value="" className="w-full text-xs border border-gray-300 rounded-md">
+                                                        <option value="">교환</option>
+                                                        {state.students.filter(s => s.id !== student.id).sort((a,b) => a.studentId - b.studentId).map(s => (<option key={s.id} value={s.id}>{s.studentId}. {s.name}</option>))}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {!useClassData && <StudentListForTeamBuilder />}
+                </div>
+            );
+        };
+
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★★★            랜덤 자리배치 컴포넌트 시작          ★★★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        const createInitialSeatingState = () => ({
+            students: Array.from({ length: 28 }, (_, i) => ({ id: `manual-${i + 1}`, name: `학생 ${i + 1}`, studentId: i + 1 })),
+            sections: { left: { name: '왼쪽', rows: 5, cols: 2 }, center: { name: '가운데', rows: 4, cols: 2 }, right: { name: '오른쪽', rows: 5, cols: 2 } },
+            seatAssignments: {},
+            fixedSeats: new Set(),
+        });
+
+        const seatingReducer = (state, action) => {
+            switch (action.type) {
+                case 'LOAD_DATA_FROM_FILE': {
+                    const { students, sections, seatAssignments, fixedSeats } = action.payload;
+                    const idMap = {};
+                    const formattedStudents = students.map(s => {
+                        const studentNumber = s.id || s.studentId;
+                        const newInternalId = `manual-${studentNumber}`;
+                        idMap[studentNumber] = newInternalId;
+                        return {
+                            id: newInternalId,
+                            name: s.name,
+                            studentId: studentNumber
+                        };
+                    });
+
+                    const formattedAssignments = {};
+                    if (seatAssignments) {
+                        for (const seatId in seatAssignments) {
+                            const oldStudentId = seatAssignments[seatId];
+                            const newInternalId = idMap[oldStudentId];
+                            if (newInternalId) {
+                                formattedAssignments[seatId] = newInternalId;
+                            }
+                        }
+                    }
+                    
+                    return { ...state, students: formattedStudents, sections: sections || state.sections, seatAssignments: formattedAssignments, fixedSeats: new Set(fixedSeats || []) };
+                }
+                case 'LOAD_STUDENTS': {
+                    const students = action.payload;
+                    const newState = { ...createInitialSeatingState(), students };
+                    const initialSeatIds=[]; Object.entries(newState.sections).forEach(([key,{rows,cols}])=>{for(let r=0;r<rows;r++){for(let c=0;c<cols;c++){initialSeatIds.push(`${key.charAt(0).toUpperCase()}-${r+1}-${c+1}`)}}});
+                    const assignments={}; initialSeatIds.forEach((seatId,index)=>{if(students[index]){assignments[seatId]=students[index].id}});
+                    return {...newState, seatAssignments: assignments};
+                }
+                case 'RESET_TO_MANUAL': return createInitialSeatingState();
+                case 'UPDATE_LAYOUT': {
+                    const { sectionKey, dimension, value } = action.payload;
+                    const numValue = Math.max(0, parseInt(value, 10) || 0);
+                    const newSections = { ...state.sections, [sectionKey]: { ...state.sections[sectionKey], [dimension]: numValue } };
+                    return { ...state, sections: newSections, seatAssignments: {}, fixedSeats: new Set() };
+                }
+                case 'RANDOMIZE_SEATS': {
+                    const { allSeatIds, students } = action.payload;
+                    
+                    const fixedAssignments = {};
+                    const fixedStudentIds = new Set();
+                    state.fixedSeats.forEach(seatId => {
+                        const studentIdInSeat = state.seatAssignments[seatId];
+                        if (studentIdInSeat) {
+                            fixedAssignments[seatId] = studentIdInSeat;
+                            fixedStudentIds.add(studentIdInSeat);
+                        }
+                    });
+
+                    const studentsToShuffle = students.filter(s => !fixedStudentIds.has(s.id));
+                    const shuffledStudentIds = studentsToShuffle.map(s => s.id).sort(() => Math.random() - 0.5);
+                    const seatsToFill = allSeatIds.filter(seatId => !state.fixedSeats.has(seatId));
+
+                    const newAssignments = { ...fixedAssignments };
+                    seatsToFill.forEach((seatId, index) => {
+                        if (shuffledStudentIds[index]) {
+                            newAssignments[seatId] = shuffledStudentIds[index];
+                        } else {
+                            delete newAssignments[seatId]; // 남는 자리는 비움
+                        }
+                    });
+                    
+                    return { ...state, seatAssignments: newAssignments };
+                }
+                case 'SET_SEAT_ASSIGNMENT': {
+                    const { seatId, studentIdStr } = action.payload;
+                    const studentId = studentIdStr ? studentIdStr : null;
+                    const newAssignments = { ...state.seatAssignments };
+                    const oldStudentInTargetSeat = newAssignments[seatId];
+                    const oldSeatOfNewStudent = Object.keys(newAssignments).find(key => newAssignments[key] === studentId);
+                    
+                    delete newAssignments[seatId];
+                    if (oldSeatOfNewStudent) { delete newAssignments[oldSeatOfNewStudent]; }
+                    
+                    if (studentId) {
+                        newAssignments[seatId] = studentId;
+                        if (oldStudentInTargetSeat && oldSeatOfNewStudent) {
+                            newAssignments[oldSeatOfNewStudent] = oldStudentInTargetSeat;
+                        }
+                    }
+                    
+                    const newFixedSeats = new Set(state.fixedSeats);
+                    if (!studentId) { newFixedSeats.delete(seatId); }
+                    return { ...state, seatAssignments: newAssignments, fixedSeats: newFixedSeats };
+                }
+                case 'TOGGLE_FIX_SEAT': {
+                    const {seatId, showModal} = action.payload;
+                    const newFixedSeats = new Set(state.fixedSeats);
+                    if (newFixedSeats.has(seatId)) { newFixedSeats.delete(seatId); } 
+                    else {
+                        if (state.seatAssignments[seatId]) { newFixedSeats.add(seatId); } 
+                        else { showModal("학생이 배정되지 않은 좌석은 고정할 수 없습니다."); }
+                    }
+                    return { ...state, fixedSeats: newFixedSeats };
+                }
+                case 'UPDATE_STUDENT': {
+                    const { id, field, value } = action.payload;
+                    const updatedStudents = state.students.map(s => (s.id === id ? { ...s, [field]: value } : s));
+                    return { ...state, students: updatedStudents };
+                }
+                case 'ADD_STUDENT': {
+                    const existingIds = state.students.map(s => s.studentId);
+                    let newStudentId = 1;
+                    while(existingIds.includes(newStudentId)) { newStudentId++; }
+                    return { ...state, students: [...state.students, { id: `manual-${newStudentId}`, studentId: newStudentId, name: "새 학생" }]};
+                }
+                case 'DELETE_STUDENT': {
+                    const studentIdToDelete = action.payload;
+                    const newAssignments = { ...state.seatAssignments };
+                    const newFixedSeats = new Set(state.fixedSeats);
+                    Object.keys(newAssignments).forEach(seatId => {
+                        if (newAssignments[seatId] === studentIdToDelete) {
+                            delete newAssignments[seatId];
+                            newFixedSeats.delete(seatId);
+                        }
+                    });
+                    return { ...state, students: state.students.filter(s => s.id !== studentIdToDelete), seatAssignments: newAssignments, fixedSeats: newFixedSeats };
+                }
+                default: return state;
+            }
+        };
+
+        const SeatingChart = ({ students: propStudents, setModalState }) => {
+            const [useClassData, setUseClassData] = useState(true);
+            const [isScreenshotMode, setIsScreenshotMode] = useState(false);
+            const [state, dispatch] = useReducer(seatingReducer, undefined, createInitialSeatingState);
+
+            useEffect(() => {
+                if (useClassData) {
+                    if (propStudents && propStudents.length > 0) {
+                        const formattedStudents = propStudents.map(s => ({...s, studentId: parseInt(s.studentId, 10) || 0 }));
+                        dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
+                    }
+                } else if (!useClassData && state.students.length === 0) {
+                    dispatch({ type: 'RESET_TO_MANUAL' });
+                }
+            }, [propStudents, useClassData]);
+            
+            const handleModeChange = (e) => {
+                const isFileMode = e.target.checked;
+                setUseClassData(!isFileMode);
+                
+                if (isFileMode) {
+                    dispatch({ type: 'RESET_TO_MANUAL' });
+                } else {
+                    if (propStudents) {
+                        const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
+                        dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
+                    }
+                }
+            };            
+            const allSeatIds = useMemo(() => {
+                const ids = [];
+                Object.entries(state.sections).forEach(([key, { rows, cols }]) => {
+                    for (let r = 0; r < rows; r++) { for (let c = 0; c < cols; c++) { ids.push(`${key.charAt(0).toUpperCase()}-${r + 1}-${c + 1}`); } }
+                });
+                return ids;
+            }, [state.sections]);
+
+            const handleSaveAsImage = () => {
+                const element = document.getElementById('seatingChartArea');
+                if (!element) return;
+                setIsScreenshotMode(true);
+                setTimeout(() => {
+                    html2canvas(element, { backgroundColor: '#f3f4f6' }).then(canvas => {
+                        const link = document.createElement('a');
+                        link.download = '자리배치표.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        setIsScreenshotMode(false);
+                    }).catch(error => { setIsScreenshotMode(false); });
+                }, 100);
+            };
+
+            const handleRandomize = () => {
+                const studentIdsWithSeats = new Set(Object.values(state.seatAssignments));
+                const unassignedStudents = state.students.filter(s => !studentIdsWithSeats.has(s.id));
+                const availableSeats = allSeatIds.filter(id => !state.seatAssignments[id] && !state.fixedSeats.has(id));
+                if (unassignedStudents.length > availableSeats.length) {
+                    setModalState({isOpen: true, title: "알림", content: `자리가 부족합니다! 학생 ${unassignedStudents.length - availableSeats.length}명이 앉을 자리가 없어요.`});
+                    return;
+                }
+                dispatch({ type: 'RANDOMIZE_SEATS', payload: { allSeatIds, students: state.students } });
+            };
+
+            const ManualSeatEditor = () => {
+                const fileInputRef = useRef(null);
+                const [isComposing, setIsComposing] = useState(false); // 한글 조합 상태를 위한 state
+
+                const studentChunks = useMemo(() => {
+                    const chunkSize = 10; const chunks = [];
+                    const sortedStudents = [...state.students].sort((a,b) => a.studentId - b.studentId);
+                    for (let i = 0; i < sortedStudents.length; i += chunkSize) { chunks.push(sortedStudents.slice(i, i + chunkSize)); }
+                    return chunks;
+                }, [state.students]);
+
+                const saveDataToFile = () => {
+                    try {
+                        const dataToSave = { students: state.students, sections: state.sections, seatAssignments: state.seatAssignments, fixedSeats: Array.from(state.fixedSeats) };
+                        const dataStr = JSON.stringify(dataToSave, null, 2);
+                        const blob = new Blob([dataStr], {type: "text/plain;charset=utf-8"});
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = '자리배치_데이터.txt';
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                        setModalState({isOpen: true, title: "알림", content: "데이터를 성공적으로 저장했습니다."});
+                    } catch (error) { setModalState({isOpen: true, title: "오류", content: "데이터 저장에 실패했습니다."}); }
+                };
+
+                const loadDataFromFile = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) { event.target.value = null; return; }
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const loadedData = JSON.parse(e.target.result);
+                            if (loadedData.students && Array.isArray(loadedData.students)) {
+                                dispatch({ type: 'LOAD_DATA_FROM_FILE', payload: loadedData });
+                            } else { setModalState({isOpen: true, title: "오류", content: "파일에 올바른 학생 명단 정보가 없습니다."}); }
+                        } catch (error) { setModalState({isOpen: true, title: "오류", content: "파일을 읽는 데 실패했습니다. 올바른 데이터 파일인지 확인해 주세요."});
+                        } finally { event.target.value = null; }
+                    };
+                    reader.readAsText(file);
+                };
+                
+                const handleDelete = (studentId) => {
+                    const student = state.students.find(s => s.id === studentId);
+                    setModalState({ isOpen: true, isConfirm: true, title: "학생 삭제", content: `'${student.name}' 학생을 삭제하시겠습니까?`, onConfirm: () => { dispatch({ type: 'DELETE_STUDENT', payload: studentId }); return true; }});
+                };
+                
+                const handleIdUpdate = (id, value) => {
+                    const newValue = parseInt(value, 10);
+                    if (isNaN(newValue) || newValue < 1) { setModalState({isOpen: true, title: '오류', content:'유효하지 않은 번호입니다.'}); return; }
+                    if (state.students.some(s => s.studentId === newValue && s.id !== id)) { setModalState({isOpen: true, title: '오류', content:'이미 사용 중인 번호입니다.'}); return; }
+                    dispatch({ type: 'UPDATE_STUDENT', payload: { id, field: 'studentId', value: newValue }});
+                };
+                const handleNameChange = (id, value) => {
+                    if (isComposing) return; // 조합 중이면 업데이트 방지
+                    dispatch({ type: 'UPDATE_STUDENT', payload: { id, field: 'name', value } });
+                };
+                return (
+                    <div className="bg-white p-4 mt-6 rounded-xl shadow-md">
+                        <input type="file" ref={fileInputRef} id="seatFileLoader" accept=".txt" style={{display: 'none'}} onChange={loadDataFromFile} />
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-semibold text-gray-800">학생 명단 관리 (수동 모드)</h3>
+                            <div className="flex gap-2">
+                                <button onClick={() => fileInputRef.current.click()} className="btn-gray !text-xs !py-1 !px-2">불러오기</button>
+                                <button onClick={saveDataToFile} className="btn-gray !text-xs !py-1 !px-2">저장하기</button>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4">
+                            {studentChunks.map((chunk, chunkIndex) => (
+                                <div key={chunkIndex} className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-gray-700 uppercase bg-gray-100"><tr><th className="px-2 py-1 w-16 text-center">번호</th><th className="px-2 py-1">이름</th><th className="px-2 py-1 w-8"></th></tr></thead>
+                                        <tbody>
+                                        {chunk.map(student => (
+                                            <tr key={student.id} className="border-b">
+                                                <td className="px-2 py-0.5 text-center"><input type="number" value={student.studentId} onChange={e => handleIdUpdate(student.id, e.target.value)} className="w-full p-1 text-center bg-transparent rounded focus:bg-yellow-50"/></td>
+                                                <td className="px-2 py-0.5">
+                                                    <input
+                                                        type="text"
+                                                        defaultValue={student.name}
+                                                        className="w-full p-1 bg-transparent rounded focus:bg-yellow-50"
+                                                        onCompositionStart={() => setIsComposing(true)}
+                                                        onCompositionEnd={(e) => {
+                                                            setIsComposing(false);
+                                                            handleNameChange(student.id, e.target.value);
+                                                        }}
+                                                        onChange={(e) => handleNameChange(student.id, e.target.value)}
+                                                    />
+                                                </td>                                                
+                                                <td className="px-2 py-0.5 text-center"><button onClick={() => handleDelete(student.id)} className="text-red-500 hover:text-red-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /> </svg></button></td>
+                                            </tr>))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={() => dispatch({type: 'ADD_STUDENT'})} className="w-full text-xl text-blue-500 hover:bg-blue-100 font-bold p-1 rounded-lg mt-2">+</button>
+                    </div>
+                );
+            };
+
+            return (
+                <div>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-3xl font-bold text-gray-800">🪄 랜덤 자리 배치</h2>
+                        <div className="flex items-center gap-3">
+                            <span className={`text-sm font-semibold ${useClassData ? 'text-green-600' : 'text-gray-400'}`}>현재 학급 명단 사용</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" onChange={handleModeChange} checked={!useClassData} className="sr-only peer" />
+                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                            </label>
+                            <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <main id="seatingChartArea" className="lg:col-span-3 bg-white p-2 sm:p-4 rounded-xl shadow-md">
+                            <div className="overflow-x-auto pb-2">
+                                <div className="bg-white min-w-max mx-auto">
+                                    <div className="flex justify-center items-start gap-4 sm:gap-8 md:gap-12 p-4">
+                                        {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
+                                            <div key={key} className="flex flex-col items-center">
+                                                <div className={`mb-2 text-base font-semibold text-gray-600 ${isScreenshotMode ? 'invisible' : ''}`}>{name}</div>
+                                                <div className="grid gap-3" style={{ gridTemplateRows: `repeat(${rows}, 1fr)`, gridTemplateColumns: `repeat(${cols}, minmax(130px, 1fr))` }}>
+                                                    {Array.from({ length: rows * cols }).map((_, i) => {
+                                                        const r = Math.floor(i / cols); const c = i % cols;
+                                                        const seatId = `${key.charAt(0).toUpperCase()}-${r + 1}-${c + 1}`;
+                                                        const student = state.students.find(s=>s.id === state.seatAssignments[seatId]);
+                                                        return (<div key={seatId} className={`relative w-full h-24 border rounded-lg shadow-sm flex flex-col items-center justify-center transition-colors ${(state.fixedSeats.has(seatId) && !isScreenshotMode) ? 'bg-rose-200 border-rose-400' : 'bg-white'}`}>
+                                                            {!isScreenshotMode && <div className="absolute top-1.5 left-2.5 text-xs text-gray-400 font-mono">{seatId}</div>}
+                                                            {!isScreenshotMode && <button onClick={() => dispatch({type: 'TOGGLE_FIX_SEAT', payload: {seatId, showModal: (msg) => setModalState({isOpen: true, title: "알림", content: msg}) }})} title="고정/해제" className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full border transition-all ${state.fixedSeats.has(seatId) ? 'bg-rose-500 border-rose-700' : 'bg-gray-300 hover:bg-gray-400 border-gray-400'}`}><span className="text-white text-sm">{state.fixedSeats.has(seatId) ? '🔒' : '🔓'}</span></button>}
+                                                            {student && <div className="text-gray-800 flex flex-col items-center justify-center text-center -mt-3"><div className="font-bold text-lg">{student.name}</div><div className="text-base text-gray-500">({student.studentId}번)</div></div>}
+                                                            {!isScreenshotMode && <div className="absolute bottom-1.5 w-full px-2"><select value={state.seatAssignments[seatId] || ''} onChange={(e) => dispatch({type: 'SET_SEAT_ASSIGNMENT', payload: {seatId, studentIdStr: e.target.value }})} className="w-full text-sm border-gray-300 rounded p-1"><option value="">--</option>{state.students.sort((a,b) => a.studentId - b.studentId).map(s => (<option key={s.id} value={s.id}>{s.studentId}. {s.name}</option>))}</select></div>}
+                                                        </div>);
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="w-full flex justify-center mt-2 pb-4"><h3 className="w-full max-w-md text-center font-bold text-xl p-2 bg-slate-200 text-slate-500 rounded-md">교탁</h3></div>
+                                </div>
+                            </div>
+                        </main>
+                        <aside className="lg:col-span-1 space-y-4">
+                            <div className="bg-white p-4 rounded-xl shadow-md">
+                                <h3 className="text-lg font-bold mb-3">실행</h3>
+                                <div className="flex flex-col gap-2">
+                                    <button onClick={handleRandomize} className="btn-green w-full">🪄 자리 섞기!</button>
+                                    <button onClick={handleSaveAsImage} className="btn-sky w-full">🖼️ 이미지로 저장</button>
+                                </div>
+                            </div>
+                            {!useClassData && 
+                                <div className="bg-white p-4 rounded-xl shadow-md">
+                                    <h2 className="text-lg font-semibold mb-1 border-b pb-1">배치 설정</h2>
+                                    {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
+                                        <div key={key} className="p-2 bg-slate-50 rounded-lg border mt-2">
+                                            <h3 className="font-bold text-base text-slate-700 mb-2">{name}</h3>
+                                            <div className="flex items-center gap-2"><label className="text-xs font-medium w-8">행:</label><input type="number" value={rows} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} className="w-full p-1 border rounded-md"/></div>
+                                            <div className="flex items-center gap-2 mt-2"><label className="text-xs font-medium w-8">열:</label><input type="number" value={cols} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} className="w-full p-1 border rounded-md"/></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            }
+                        </aside>
+                    </div>
+                    {!useClassData && <ManualSeatEditor />}
+                </div>
+            );
+        };
+
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★★★                 컴포넌트 종료                 ★★★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
         const Dashboard = ({ user, initialUserData, onLogout }) => {
             const [userData, setUserData] = useState(initialUserData);
@@ -1620,39 +1939,30 @@
             const [classes, setClasses] = useState([]);
             const [selectedClassId, setSelectedClassId] = useState('');
             const [classData, setClassData] = useState({ students: [], pendingStudents: [] });
-            const [allSchoolStudents, setAllSchoolStudents] = useState([]);
-            const [loading, setLoading] = useState({ classes: true, classData: true, allStudents: true });
+            const [loading, setLoading] = useState({ classes: true, classData: true });
             const [modalState, setModalState] = useState({ isOpen: false });
-            const [isClassCodeVisible, setIsClassCodeVisible] = useState(true);
             
             const isTeacher = user.role === 'teacher';
             const isAdmin = user.email === CONSTANTS.ADMIN_ACCOUNT;
             const selectedClass = useMemo(() => classes.find(cls => cls.id === selectedClassId), [classes, selectedClassId]);
-            const sidebarRef = useRef(null);
 
             useEffect(() => {
                 if (!user?.uid) return;
                 const collectionName = user.role === 'teacher' ? CONSTANTS.COLLECTIONS.TEACHERS : CONSTANTS.COLLECTIONS.STUDENTS;
                 const unsub = db.collection(collectionName).doc(user.uid).onSnapshot(doc => {
-                    if (doc.exists) {
-                        setUserData(doc.data());
-                    }
+                    if (doc.exists) setUserData(doc.data());
                 });
                 return () => unsub();
             }, [user.uid, user.role]);
 
-            useEffect(() => {
+             useEffect(() => {
                 let unsub = () => {};
                 if (isTeacher) {
-                    // 1. 여기서 .orderBy('className')를 제거합니다.
                     unsub = db.collection(CONSTANTS.COLLECTIONS.CLASSES)
                         .where('teacherId', '==', user.uid)
                         .onSnapshot(snapshot => {
                             const classList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            
-                            // 2. 데이터를 받은 후, 자바스크립트로 직접 정렬합니다.
                             classList.sort((a, b) => a.className.localeCompare(b.className));
-
                             setClasses(classList);
                             if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
                                 setSelectedClassId(classList[0].id);
@@ -1662,7 +1972,6 @@
                             setLoading(prev => ({ ...prev, classes: false }));
                         });
                 } else {
-                    // 학생 코드는 이전과 동일하게 유지됩니다.
                     const unsubStudent = db.collection('students').doc(user.uid).onSnapshot(async (studentDoc) => {
                         if (studentDoc.exists) {
                             const studentProfile = studentDoc.data();
@@ -1672,9 +1981,7 @@
                                 const classPromises = approvedClassIds.map(id => db.collection('classes').doc(id).get());
                                 const classDocs = await Promise.all(classPromises);
                                 let classList = classDocs.filter(doc => doc.exists).map(doc => ({ id: doc.id, ...doc.data() }));
-                                
                                 classList.sort((a, b) => a.className.localeCompare(b.className));
-
                                 setClasses(classList);
                                  if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
                                       setSelectedClassId(classList[0].id);
@@ -1691,7 +1998,7 @@
                     return () => unsubStudent();
                 }
                 return () => unsub();
-            }, [user.uid, isTeacher, selectedClassId]); // selectedClassId를 의존성 배열에 추가하여 안정성을 높입니다.
+            }, [user.uid, isTeacher, selectedClassId]);
             
             useEffect(() => {
                 if (!selectedClassId || !isTeacher) {  
@@ -1713,111 +2020,65 @@
 
             const approveStudent = async (studentId) => {
                 if (!selectedClassId) return;
-                try {
-                    await db.collection(CONSTANTS.COLLECTIONS.STUDENTS).doc(studentId).update({
-                        [`approvedBy.${selectedClassId}`]: true
-                    });
-                    setModalState({ isOpen: true, title: '성공', content: '학생을 학급에 승인했습니다.' });
-                } catch (error) {
-                    console.error("Error approving student: ", error);
-                    setModalState({ isOpen: true, title: '오류', content: '학생 승인 중 오류가 발생했습니다.' });
-                }
+                await db.collection('students').doc(studentId).update({ [`approvedBy.${selectedClassId}`]: true });
             };
-
             const rejectStudent = async (studentId) => {
                 if (!selectedClassId) return;
-                try {
-                    await db.collection(CONSTANTS.COLLECTIONS.STUDENTS).doc(studentId).update({
-                        classIds: FieldValue.arrayRemove(selectedClassId),
-                        [`approvedBy.${selectedClassId}`]: FieldValue.delete()
-                    });
-                    setModalState({ isOpen: true, title: '성공', content: '학생의 가입 요청을 거절했습니다.' });
-                } catch (error) {
-                    console.error("Error rejecting student: ", error);
-                    setModalState({ isOpen: true, title: '오류', content: '학생 거절 중 오류가 발생했습니다.' });
-                }
+                await db.collection('students').doc(studentId).update({ classIds: FieldValue.arrayRemove(selectedClassId), [`approvedBy.${selectedClassId}`]: FieldValue.delete() });
             };
-
             const deleteStudent = (studentToDelete) => {
-                if (!selectedClassId) return;
+                 setModalState({ isOpen: true, isConfirm: true, title: '학생 제외 확인', content: `'${studentToDelete.name}' 학생을 학급에서 제외하시겠습니까?`, onConfirm: async () => { await db.collection('students').doc(studentToDelete.id).update({ classIds: FieldValue.arrayRemove(selectedClassId), [`approvedBy.${selectedClassId}`]: FieldValue.delete() }); return true; } });
+            };
+            const inviteStudent = async (studentToInvite, targetClassId) => {
+                 await db.collection('students').doc(studentToInvite.id).update({ classIds: FieldValue.arrayUnion(targetClassId), [`approvedBy.${targetClassId}`]: true });
+            };
+            const updateClass = async (classId, data) => {
+                await db.collection('classes').doc(classId).update(data);
+            };
+            const deleteClass = (classItem) => { // classId 대신 classItem 객체 전체를 받도록 수정
+                const classIdToDelete = classItem.id;
                 setModalState({
-                    isOpen: true, isConfirm: true, title: '학생 제외 확인',
-                    content: `'${studentToDelete.name}' 학생을 학급에서 제외하시겠습니까?`,
-                    confirmText: '제외',
+                    isOpen: true, isConfirm: true, title: '학급 삭제 확인',
+                    content: `'${classItem.className}' 학급을 정말로 삭제하시겠습니까? 학급에 속한 모든 학생 정보, 점수, 일정이 함께 삭제되며 복구할 수 없습니다.`,
+                    confirmText: '삭제',
                     onConfirm: async () => {
                         try {
-                            await db.collection(CONSTANTS.COLLECTIONS.STUDENTS).doc(studentToDelete.id).update({
-                                classIds: FieldValue.arrayRemove(selectedClassId),
-                                [`approvedBy.${selectedClassId}`]: FieldValue.delete()
+                            const studentsSnap = await db.collection('students').where('classIds', 'array-contains', classIdToDelete).get();
+                            const studentBatch = db.batch();
+                            studentsSnap.forEach(doc => {
+                                studentBatch.update(doc.ref, { 
+                                    classIds: FieldValue.arrayRemove(classIdToDelete), 
+                                    [`approvedBy.${classIdToDelete}`]: FieldValue.delete() 
+                                });
                             });
+                            await studentBatch.commit();
+
+                            await db.collection('schedules').doc(classIdToDelete).delete();
+                            await db.collection('assessments').doc(classIdToDelete).delete();
+                            if (classItem.googleSheetId) {
+                                await db.collection('scores').doc(classIdToDelete).delete().catch(e => console.log("Scores doc not found, skipping delete."));
+                            }
+                            await db.collection('classes').doc(classIdToDelete).delete();
+                            
+                            setModalState({ isOpen: true, title: "삭제 완료", content: "학급이 성공적으로 삭제되었습니다." });
                             return true;
+
                         } catch (error) {
-                            console.error("Error removing student from class: ", error);
-                            setModalState({ isOpen: true, title: '오류', content: '학생 제외 중 오류가 발생했습니다.' });
+                            console.error("학급 삭제 실패:", error);
+                            setModalState({ isOpen: true, title: "삭제 실패", content: `학급 삭제 중 오류가 발생했습니다: ${error.message}` });
                             return false;
                         }
                     }
                 });
             };
 
-            const inviteStudent = async (studentToInvite, targetClassId) => {
-                try {
-                    await db.collection(CONSTANTS.COLLECTIONS.STUDENTS).doc(studentToInvite.id).update({
-                        classIds: FieldValue.arrayUnion(targetClassId),
-                        [`approvedBy.${targetClassId}`]: true
-                    });
-                    setModalState({
-                        isOpen: true, title: '초대 완료',
-                        content: `${studentToInvite.name} 학생을 새로운 학급으로 초대했습니다.`
-                    });
-                } catch (error) {
-                    console.error("Error inviting student: ", error);
-                    setModalState({ isOpen: true, title: '오류', content: '학생 초대 중 오류가 발생했습니다.' });
-                }
-            };
-
-            const updateClass = async (classId, data) => {
-                try {
-                    await db.collection(CONSTANTS.COLLECTIONS.CLASSES).doc(classId).update(data);
-                    setModalState({ isOpen: true, title: '성공', content: '학급 정보가 수정되었습니다.' });
-                } catch (error) {
-                    console.error("Error updating class: ", error);
-                    setModalState({ isOpen: true, title: '오류', content: '학급 정보 수정 중 오류가 발생했습니다.' });
-                }
-            };
-            
-            const deleteClass = async (classIdToDelete) => {
-                const batch = db.batch();
-                const classRef = db.collection(CONSTANTS.COLLECTIONS.CLASSES).doc(classIdToDelete);
-                batch.delete(classRef);
-                const scheduleRef = db.collection(CONSTANTS.COLLECTIONS.SCHEDULES).doc(classIdToDelete);
-                batch.delete(scheduleRef);
-                const assessmentRef = db.collection(CONSTANTS.COLLECTIONS.ASSESSMENTS).doc(classIdToDelete);
-                batch.delete(assessmentRef);
-                const studentsQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('classIds', 'array-contains', classIdToDelete);
-                const studentsSnapshot = await studentsQuery.get();
-                studentsSnapshot.forEach(doc => {
-                    const studentRef = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).doc(doc.id);
-                    batch.update(studentRef, {
-                        classIds: FieldValue.arrayRemove(classIdToDelete),
-                        [`approvedBy.${classIdToDelete}`]: FieldValue.delete()
-                    });
-                });
-
-                try {
-                    await batch.commit();
-                    setModalState({ isOpen: true, title: '성공', content: '학급 및 관련 데이터가 모두 삭제되었습니다.' });
-                } catch (error) {
-                    console.error("Error deleting class: ", error);
-                    setModalState({ isOpen: true, title: '오류', content: '학급 삭제 중 오류가 발생했습니다.' });
-                }
-            };
-
-            const teacherMenuItems = [  
+            const teacherMenuItems = [
                 { id: 'schedule', label: '일정 관리', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
                 { id: 'students', label: '학생 관리', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg> },
                 { id: 'scores', label: '수행 점수', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> },
                 { id: 'test-scores', label: '시험 점수', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+                { id: 'team-builder', label: '랜덤 팀 구성', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.002 3.002 0 012.288-2.542M11.644 16.143a3.003 3.003 0 011.712-2.542m0 0A3 3 0 0115 11.236V10c0-1.657-1.343-3-3-3S9 8.343 9 10v1.236A3 3 0 0111.644 16.143z" /></svg> },
+                { id: 'seating-chart', label: '랜덤 자리배치', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-3-5v5m-3-8v8M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" /></svg> },
                 { id: 'class', label: '학급 관리', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
             ];
             
@@ -1830,28 +2091,30 @@
 
             const menuItems = isTeacher ? teacherMenuItems : studentMenuItems;
             const themeColor = isTeacher ? 'sky' : 'rose';
-            const hoverBg = isTeacher ? 'hover:bg-sky-100' : 'hover:bg-rose-100';
-
+            
             const renderContent = () => {
-                 if(loading.classes || (isTeacher && loading.classData)) return <div className="h-full w-full skeleton"></div>;
-                 if(!selectedClassId && !['class', 'info'].includes(currentMenu)) {
-                    return <div className="text-center text-gray-500 p-10 bg-white rounded-lg shadow-md"><p className="text-xl font-bold">참여 중인 학급이 없습니다.</p><p className="mt-2">{isTeacher ? "'학급 관리' 메뉴에서 학급을 생성하거나, 학생의 가입 신청을 승인해주세요." : "아직 승인된 학급이 없습니다. 선생님의 승인을 기다려주세요."}</p></div>;
-                 }
-                 switch (currentMenu) {
-                    case 'schedule': return <ScheduleCalendar classes={classes} selectedClass={selectedClass} selectedClassId={selectedClassId} students={classData.students} allSchoolStudents={allSchoolStudents} teacherId={user.uid} isTeacher={isTeacher} setModalState={setModalState} />;
-                    case 'class': return isTeacher ? <ClassManagement teacherId={user.uid} classes={classes} setModalState={setModalState} onUpdateClass={updateClass} onDeleteClass={deleteClass} isAdmin={isAdmin} /> : null;
-                    case 'students': return isTeacher ? <StudentManagement students={classData.students} pendingStudents={classData.pendingStudents} deleteStudent={deleteStudent} approveStudent={approveStudent} rejectStudent={rejectStudent} inviteStudent={inviteStudent} classes={classes} setModalState={setModalState} selectedClass={selectedClass} /> : null;                    case 'scores': return <PerformanceScoreManager isTeacher={isTeacher} userData={userData} selectedClass={selectedClass} setModalState={setModalState} />;
+                if(loading.classes || (isTeacher && loading.classData)) return <div className="h-full w-full skeleton"></div>;
+                if(!selectedClassId && !['class', 'info', 'team-builder', 'seating-chart'].includes(currentMenu)) {
+                    return <div className="text-center text-gray-500 p-10 bg-white rounded-lg shadow-md"><p className="text-xl font-bold">참여 중인 학급이 없습니다.</p><p className="mt-2">{isTeacher ? "'학급 관리' 메뉴에서 학급을 생성해주세요." : "아직 승인된 학급이 없습니다."}</p></div>;
+                }
+                switch (currentMenu) {
+                    case 'schedule': return <ScheduleCalendar classes={classes} selectedClass={selectedClass} selectedClassId={selectedClassId} students={classData.students} teacherId={user.uid} isTeacher={isTeacher} setModalState={setModalState} />;
+                    case 'students': return isTeacher ? <StudentManagement students={classData.students} pendingStudents={classData.pendingStudents} deleteStudent={deleteStudent} approveStudent={approveStudent} rejectStudent={rejectStudent} inviteStudent={inviteStudent} classes={classes} setModalState={setModalState} selectedClass={selectedClass} /> : null;
+                    case 'scores': return <PerformanceScoreManager isTeacher={isTeacher} userData={userData} selectedClass={selectedClass} setModalState={setModalState} />;
                     case 'test-scores': return <TestScoreViewer isTeacher={isTeacher} userData={userData} selectedClass={selectedClass} setModalState={setModalState} />;
+                    case 'team-builder': return isTeacher ? <TeamBuilder students={classData.students} setModalState={setModalState} /> : null;
+                    case 'seating-chart': return isTeacher ? <SeatingChart students={classData.students} setModalState={setModalState} /> : null;
+                    case 'class': return isTeacher ? <ClassManagement teacherId={user.uid} classes={classes} setModalState={setModalState} onUpdateClass={updateClass} onDeleteClass={deleteClass} isAdmin={isAdmin} /> : null;
                     case 'info': return <UserInfo user={user} userData={userData} setModalState={setModalState} />;
                     default: return null;
-                 }
+                }
             };
             
             return (
                  <div className="flex h-screen bg-gray-100">
                     <Modal modalState={modalState} setModalState={setModalState} />
-                    <aside ref={sidebarRef} className={`sidebar bg-white shadow-lg flex flex-col z-20 absolute md:relative inset-y-0 left-0 transform md:transform-none ${isSidebarExpanded ? "w-64" : "w-20"} ${isSidebarExpanded ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-                        <div className="flex flex-col flex-grow overflow-y-hidden">
+                    <aside className={`sidebar bg-white shadow-lg flex flex-col z-20 absolute md:relative inset-y-0 left-0 transform md:transform-none ${isSidebarExpanded ? "w-64" : "w-20"}`}>
+                         <div className="flex flex-col flex-grow overflow-y-hidden">
                             <div className="flex-shrink-0 flex items-center justify-center p-2 border-b relative" style={{ minHeight: '60px' }}>
                                 {isSidebarExpanded && <span className={`text-2xl font-bold text-${themeColor}-500`}>기가지현</span>}
                                 <button onClick={() => setIsSidebarExpanded(!isSidebarExpanded)} className="p-2 rounded-lg hover:bg-gray-100 absolute top-3 right-3">{isSidebarExpanded ? <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg> : <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg> }</button>
@@ -1860,21 +2123,6 @@
                                 {isSidebarExpanded ? (
                                     <div>
                                         <p className="text-sm text-gray-500 mt-2 mb-4 text-center">{userData.name} {isTeacher ? '선생님' : '학생'}</p>
-                                        {isTeacher && (
-                                            <div className="my-4 mx-2">
-                                                <div className="flex items-center justify-center mb-2 cursor-pointer" onClick={() => setIsClassCodeVisible(prev => !prev)}>
-                                                    <label className="text-sm font-bold text-gray-600">현재 학급 코드</label>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ml-1 text-gray-500 transition-transform ${isClassCodeVisible ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </div>
-                                                {isClassCodeVisible && (
-                                                    <div className="w-full bg-sky-100 text-sky-800 rounded-lg p-4 flex items-center justify-center h-24 cursor-pointer" onClick={() => navigator.clipboard.writeText(selectedClass?.classCode)} title="클릭하여 복사">
-                                                        {loading.classes ? (<div className="h-12 w-40 mx-auto skeleton"></div>) : (<p className="text-4xl font-black tracking-widest text-center">{selectedClass?.classCode || '----'}</p>)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
                                         <div className="my-4 px-2">
                                             <label htmlFor="class-select" className="text-sm font-bold text-gray-600 mb-2 block">학급 전환</label>
                                             <select id="class-select" className="w-full border rounded-lg p-2 bg-gray-50" value={selectedClassId} onChange={e => setSelectedClassId(e.target.value)} disabled={classes.length === 0}>
@@ -1883,7 +2131,7 @@
                                         </div>
                                     </div>
                                 ) : (<div className="my-4 text-center"><p className={`text-xs font-bold text-gray-600 truncate p-2 bg-${themeColor}-100 rounded-md`}>{selectedClass?.className || 'N/A'}</p></div>)}
-                                <nav className="space-y-1">{menuItems.map(item => (<button key={item.id} onClick={() => setCurrentMenu(item.id)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${!isSidebarExpanded && 'justify-center'} ${currentMenu === item.id ? `bg-${themeColor}-500 text-white font-bold shadow` : `text-gray-600 ${hoverBg}`}`} title={isSidebarExpanded ? '' : item.label}>{item.icon}{isSidebarExpanded && <span>{item.label}</span>}</button>))} </nav>
+                                <nav className="space-y-1">{menuItems.map(item => (<button key={item.id} onClick={() => setCurrentMenu(item.id)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${!isSidebarExpanded && 'justify-center'} ${currentMenu === item.id ? `bg-${themeColor}-500 text-white font-bold shadow` : `text-gray-600 hover:bg-gray-100`}`} title={isSidebarExpanded ? '' : item.label}>{item.icon}{isSidebarExpanded && <span>{item.label}</span>}</button>))} </nav>
                             </div>
                         </div>
                         <div className="p-2 border-t border-gray-200 flex-shrink-0">
@@ -1902,7 +2150,7 @@
         function App() {
             const [user, setUser] = useState(undefined);
             const [userData, setUserData] = useState(null);
-            const [view, setView] = useState('initial'); // 'initial', 'teacherLogin', 'studentLogin'
+            const [view, setView] = useState('initial');
             const [error, setError] = useState('');
             const [modalState, setModalState] = useState({ isOpen: false });
 
@@ -1912,20 +2160,16 @@
                         const teacherDoc = await db.collection(CONSTANTS.COLLECTIONS.TEACHERS).doc(authUser.uid).get();
                         if (teacherDoc.exists) {
                             setUser({ uid: authUser.uid, email: authUser.email, role: 'teacher' });
-                            setUserData(teacherDoc.data());
-                            return;
+                            setUserData(teacherDoc.data()); return;
                         }
                         const studentDoc = await db.collection(CONSTANTS.COLLECTIONS.STUDENTS).doc(authUser.uid).get();
                         if (studentDoc.exists) {
                             setUser({ uid: authUser.uid, email: authUser.email, role: 'student' });
-                            setUserData(studentDoc.data());
-                            return;
+                            setUserData(studentDoc.data()); return;
                         }
                         auth.signOut();
                     } else {
-                        setUser(null);
-                        setUserData(null);
-                        setView('initial');
+                        setUser(null); setUserData(null); setView('initial');
                     }
                 });
                 return () => authUnsub();
@@ -1935,59 +2179,37 @@
                 setError('');
                 const provider = new firebase.auth.GoogleAuthProvider();
                 provider.setCustomParameters({ prompt: 'select_account' });
-
                 try {
                     const result = await auth.signInWithPopup(provider);
                     const gUser = result.user;
                     const email = gUser.email;
-
                     if (!email.endsWith(`@${CONSTANTS.SCHOOL_DOMAIN}`)) {
                         await auth.signOut();
-                        setError(`'${CONSTANTS.SCHOOL_DOMAIN}' 학교 계정으로만 가입 및 로그인이 가능합니다.`);
-                        return;
+                        setError(`'${CONSTANTS.SCHOOL_DOMAIN}' 학교 계정으로만 로그인이 가능합니다.`); return;
                     }
-                    
                     if (role === 'teacher') {
                         const authorizedTeacherDoc = await db.collection(CONSTANTS.COLLECTIONS.AUTHORIZED_TEACHERS).doc(email).get();
                         if (!authorizedTeacherDoc.exists) {
                              await auth.signOut();
-                             setError(`승인되지 않은 교사 계정입니다. 관리자에게 문의하세요.`);
-                             return;
+                             setError(`승인되지 않은 교사 계정입니다. 관리자에게 문의하세요.`); return;
                         }
                     }
-
                     const collectionName = role === 'teacher' ? 'teachers' : 'students';
                     const userRef = db.collection(collectionName).doc(gUser.uid);
                     const userDoc = await userRef.get();
-
                     if (!userDoc.exists) {
-                        // [수정] 학생 이름/학번 파싱 로직
                         if (role === 'student') {
                             const displayName = gUser.displayName || '';
-                            let studentId = '';
-                            let name = displayName;
-
-                            // Google 계정 이름이 '1234홍길동' 형식(4자리 학번)인지 확인
+                            let studentId = ''; let name = displayName;
                             if (displayName && /^\d{4}/.test(displayName) && displayName.length > 4) {
-                                studentId = displayName.substring(0, 4); // 앞 4자리를 학번으로
-                                name = displayName.substring(5);      // 나머지 문자열을 이름으로
+                                studentId = displayName.substring(0, 4);
+                                name = displayName.substring(5);
                             }
-                            
-                            const newUserProfile = {
-                                name: name,
-                                schoolAccount: gUser.email,
-                                studentId: studentId,
-                                classIds: [],
-                                approvedBy: {},
-                            };
+                            const newUserProfile = { name, schoolAccount: gUser.email, studentId, classIds: [], approvedBy: {} };
                             await userRef.set(newUserProfile);
                             setModalState({ isOpen: true, title: '첫 로그인', content: '계정이 생성되었습니다! 선생님이 학급에 초대하고 승인하면 서비스 이용이 가능합니다.' });
-
-                        } else { // 교사일 경우
-                             const newUserProfile = {
-                                 name: gUser.displayName || '이름 없음',
-                                 schoolAccount: gUser.email,
-                             };
+                        } else {
+                             const newUserProfile = { name: gUser.displayName || '이름 없음', schoolAccount: gUser.email };
                              await userRef.set(newUserProfile);
                              setModalState({ isOpen: true, title: '환영합니다!', content: '교사 계정이 생성되었습니다. \'학급 관리\' 메뉴에서 첫 학급을 만들어주세요.' });
                         }
@@ -2027,14 +2249,9 @@
 
             let authView;
             switch(view) {
-                case 'teacherLogin':
-                    authView = <LoginScreen role="teacher" onLogin={handleGoogleLogin} onBack={() => setView('initial')} />;
-                    break;
-                case 'studentLogin':
-                    authView = <LoginScreen role="student" onLogin={handleGoogleLogin} onBack={() => setView('initial')} />;
-                    break;
-                default:
-                    authView = <InitialScreen onSelectRole={setView} />;
+                case 'teacherLogin': authView = <LoginScreen role="teacher" onLogin={handleGoogleLogin} onBack={() => setView('initial')} />; break;
+                case 'studentLogin': authView = <LoginScreen role="student" onLogin={handleGoogleLogin} onBack={() => setView('initial')} />; break;
+                default: authView = <InitialScreen onSelectRole={setView} />;
             }
             
             return (
