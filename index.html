@@ -1006,31 +1006,6 @@
                             </div>
                         </div>
                     )}
-                    
-                    {/* --- 학급 학생 목록 (복원된 코드) --- */}
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h3 className="text-xl font-bold mb-4">학급 학생 목록</h3>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left min-w-[600px]">
-                                <thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">작업</th></tr></thead>
-                                <tbody>
-                                    {students.map(s => ( 
-                                        <tr key={s.id} className="border-b">
-                                            <td className="p-3">{s.name}</td>
-                                            <td className="p-3">{s.studentId}</td>
-                                            <td className="p-3">{s.schoolAccount}</td>
-                                            <td className="p-3 text-center flex gap-2 justify-center">
-                                                <button onClick={() => setInvitingStudent(s)} className="btn-green !px-4 !py-1">학급 초대</button>
-                                                <button onClick={() => deleteStudent(s)} className="btn-red !px-4 !py-1">학급에서 제외</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            {students.length === 0 && <p className="text-center text-gray-500 py-8">소속된 학생이 없습니다.</p>}
-                        </div>
-                    </div>
-
                     {/* --- 전체 학생 검색 및 초대 기능 --- */}
                     <div className="bg-white p-6 rounded-lg shadow-md mt-8">
                         <h3 className="text-xl font-bold mb-4">전체 학생 검색 및 초대</h3>
@@ -1083,6 +1058,29 @@
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                    {/* --- 학급 학생 목록 (복원된 코드) --- */}
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <h3 className="text-xl font-bold mb-4">학급 학생 목록</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left min-w-[600px]">
+                                <thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">작업</th></tr></thead>
+                                <tbody>
+                                    {students.map(s => ( 
+                                        <tr key={s.id} className="border-b">
+                                            <td className="p-3">{s.name}</td>
+                                            <td className="p-3">{s.studentId}</td>
+                                            <td className="p-3">{s.schoolAccount}</td>
+                                            <td className="p-3 text-center flex gap-2 justify-center">
+                                                <button onClick={() => setInvitingStudent(s)} className="btn-green !px-4 !py-1">학급 초대</button>
+                                                <button onClick={() => deleteStudent(s)} className="btn-red !px-4 !py-1">학급에서 제외</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {students.length === 0 && <p className="text-center text-gray-500 py-8">소속된 학생이 없습니다.</p>}
                         </div>
                     </div>
                 </div>
