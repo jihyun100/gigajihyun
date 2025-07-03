@@ -214,7 +214,7 @@
                             </select>
                         </div>
                     </div>
-                       <div className="mt-4">
+                        <div className="mt-4">
                             <button onClick={handleSync} disabled={loading} className="w-full btn-sky !px-4 !py-2">
                                 {loading ? '동기화 중...' : '동기화 실행'}
                             </button>
@@ -1501,9 +1501,9 @@
                                 const classList = classDocs.filter(doc => doc.exists).map(doc => ({ id: doc.id, ...doc.data() }));
                                 setClasses(classList);
                                  if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
-                                     setSelectedClassId(classList[0].id);
+                                      setSelectedClassId(classList[0].id);
                                  } else if (classList.length === 0) {
-                                     setSelectedClassId('');
+                                      setSelectedClassId('');
                                  }
                             } else {
                                 setClasses([]);
@@ -1786,15 +1786,16 @@
                     const userDoc = await userRef.get();
 
                     if (!userDoc.exists) {
-                        // [수정됨] 학생 이름/학번 파싱 로직
+                        // [수정] 학생 이름/학번 파싱 로직
                         if (role === 'student') {
                             const displayName = gUser.displayName || '';
                             let studentId = '';
                             let name = displayName;
 
-                            if (displayName && /^\d{5}/.test(displayName) && displayName.length > 5) {
-                                studentId = displayName.substring(0, 5);
-                                name = displayName.substring(5);
+                            // Google 계정 이름이 '1234홍길동' 형식(4자리 학번)인지 확인
+                            if (displayName && /^\d{4}/.test(displayName) && displayName.length > 4) {
+                                studentId = displayName.substring(0, 4); // 앞 4자리를 학번으로
+                                name = displayName.substring(4);      // 나머지 문자열을 이름으로
                             }
                             
                             const newUserProfile = {
@@ -1809,9 +1810,9 @@
 
                         } else { // 교사일 경우
                              const newUserProfile = {
-                                name: gUser.displayName || '이름 없음',
-                                schoolAccount: gUser.email,
-                            };
+                                 name: gUser.displayName || '이름 없음',
+                                 schoolAccount: gUser.email,
+                             };
                              await userRef.set(newUserProfile);
                              setModalState({ isOpen: true, title: '환영합니다!', content: '교사 계정이 생성되었습니다. \'학급 관리\' 메뉴에서 첫 학급을 만들어주세요.' });
                         }
@@ -1845,7 +1846,7 @@
                         <div className="text-sm text-center mt-6">
                              <a href="#" onClick={(e) => { e.preventDefault(); onBack(); }} className="font-medium text-gray-600">뒤로가기</a>
                         </div>
-                    </div>
+                     </div>
                 );
             };
 
