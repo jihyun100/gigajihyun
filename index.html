@@ -423,8 +423,8 @@
         const ScheduleDetailModal = ({ isOpen, onClose, schedule, onEdit, onDelete, isTeacher }) => {
             if(!isOpen || !schedule) return null;
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50" onClick={onClose}>
-                    <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
+                    <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-2xl font-bold text-gray-800 mb-2">{schedule.title}</h3>
                         <p className="text-gray-500 mb-4">{schedule.date} {schedule.time}</p>
                         <p className="bg-gray-50 p-4 rounded-md mb-4 min-h-[100px] whitespace-pre-wrap">{schedule.description || "상세 설명이 없습니다."}</p>
@@ -824,7 +824,7 @@
                         <h3 className="text-xl font-bold mb-4">새 학급 추가</h3>
                         <form onSubmit={handleAddClass} className="flex flex-col md:flex-row gap-4 items-end">
                             <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급명</label><input type="text" value={className} onChange={e => setClassName(e.target.value)} placeholder="예: 1학년 1반" className="w-full mt-1 p-2 border rounded-md" /></div>
-                            <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급 코드 (6자리, 첫 글자는 영문. 추후 변경 불가.)</label><input type="text" value={classCode} onChange={e => handleClassCodeChange(e.target.value)} maxLength={6} placeholder="예: A12345" className="w-full mt-1 p-2 border rounded-md" /></div>
+                            <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급 코드 (6자리, 첫 글자는 영문)</label><input type="text" value={classCode} onChange={e => handleClassCodeChange(e.target.value)} maxLength={6} placeholder="예: A12345" className="w-full mt-1 p-2 border rounded-md" /></div>
                             <button type="submit" className="btn-sky w-full md:w-auto !px-6 !py-2">추가</button>
                         </form>
                     </div>
@@ -853,58 +853,6 @@
                             <StudentSync setModalState={setModalState} />
                         </div>
                     )}
-                </div>
-            );
-        };
-
-        const InviteStudentModal = ({ isOpen, onClose, student, classes, onInvite }) => {
-            const [targetClassId, setTargetClassId] = useState('');
-
-            useEffect(() => {
-                if (isOpen) {
-                    const availableClasses = classes.filter(c => !student.classIds.includes(c.id));
-                    if (availableClasses.length > 0) {
-                        setTargetClassId(availableClasses[0].id);
-                    } else {
-                        setTargetClassId('');
-                    }
-                }
-            }, [isOpen, classes, student]);
-
-            if (!isOpen) return null;
-
-            const handleInvite = () => {
-                if (targetClassId) {
-                    onInvite(student, targetClassId);
-                    onClose();
-                }
-            };
-
-            const availableClasses = classes.filter(c => !student.classIds.includes(c.id));
-
-            return (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[100]" onClick={onClose}>
-                    <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">학급 초대</h3>
-                        <p className="text-center mb-6">
-                            <span className="font-bold">{student.name}({student.studentId})</span> 학생을 어느 학급으로 초대하시겠습니까?
-                        </p>
-                        {availableClasses.length > 0 ? (
-                            <div className="space-y-4">
-                                <select value={targetClassId} onChange={e => setTargetClassId(e.target.value)} className="w-full p-2 border rounded-md">
-                                    {availableClasses.map(c => (
-                                        <option key={c.id} value={c.id}>{c.className}</option>
-                                    ))}
-                                </select>
-                                <div className="flex gap-4 mt-8 justify-end">
-                                    <button onClick={onClose} className="btn-gray">취소</button>
-                                    <button onClick={handleInvite} className="btn-green">초대하기</button>
-                                </div>
-                            </div>
-                        ) : (
-                            <p className="text-center text-gray-500 py-4">초대할 수 있는 다른 학급이 없습니다.</p>
-                        )}
-                    </div>
                 </div>
             );
         };
@@ -1120,12 +1068,13 @@
                         <div className="bg-white p-8 rounded-lg shadow-md">
                             <h3 className="text-xl font-bold text-gray-700 mb-2">Google 시트 연동</h3>
                             <p className="text-gray-500 mb-4">
-                                이 학급의 시험 점수를 관리할 Google 시트의 URL을 입력해주세요.  
+                                이 학급의 시험 점수를 관리할 Google 시트의 URL을 입력해주세요.
                                 <br/>
                                 <a href="https://docs.google.com/spreadsheets/d/1A4-3Df_UCruvAcZtavqHq8L5NvqZCBonQIb28t0wajw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline font-bold text-sm">
-                                <u>  샘플 양식 시트 확인하기    </u>
+                                  샘플 양식 시트 확인하기
                                 </a>
-                                <span className="text-sm text-red-500">* 시트는 '링크가 있는 모든 사용자에게' <b>뷰어</b>로 공유되어야 합니다.</span>
+                                <br/>
+                                <span className="text-sm text-red-500">* 시트는 '링크가 있는 모든 사용자에게' 뷰어로 공유되어야 합니다.</span>
                             </p>
                             <div className="flex gap-2">
                                 <input 
@@ -1427,12 +1376,7 @@
                         {!assessmentData ? (
                             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                                 <h3 className="text-xl font-bold mb-4">점수 파일 업로드</h3>
-                                <span className="text-sm text-red-500">* <b>나이스</b> '수행평가 성적관리' 학급별 일괄 등록 파일(.xlsx) 업로드. 학년 선택 후 '업로드' 버튼 클릭. </span>
                                 <div className="grid md:grid-cols-3 gap-4 items-end">
-                                    <div className="w-full">
-                                        <label className="text-sm font-medium text-gray-600">엑셀 파일</label>
-                                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xlsx, .xls" className="w-full mt-1 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/>
-                                    </div>
                                     <div className="w-full">
                                         <label className="text-sm font-medium text-gray-600">학년 선택</label>
                                         <select value={grade} onChange={e => setGrade(e.target.value)} className="w-full mt-1 p-2 border rounded-md">
@@ -1441,6 +1385,10 @@
                                             <option value="2">2학년</option>
                                             <option value="3">3학년</option>
                                         </select>
+                                    </div>
+                                    <div className="w-full">
+                                        <label className="text-sm font-medium text-gray-600">엑셀 파일</label>
+                                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xlsx, .xls" className="w-full mt-1 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/>
                                     </div>
                                     <button onClick={handleUpload} disabled={uploading} className="btn-sky w-full !py-2">
                                         {uploading ? '업로드 중...' : '업로드'}
@@ -1587,7 +1535,7 @@
                 return () => studentsUnsub();
             }, [selectedClassId, isTeacher]);
 
-            // --- [수정됨] 학생 및 학급 관리 함수들 ---
+            // [수정됨] 학생 및 학급 관리 함수들
             const approveStudent = async (studentId) => {
                 if (!selectedClassId) return;
                 try {
