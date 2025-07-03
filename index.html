@@ -1535,7 +1535,6 @@
                 return () => studentsUnsub();
             }, [selectedClassId, isTeacher]);
 
-            // [수정됨] 학생 및 학급 관리 함수들
             const approveStudent = async (studentId) => {
                 if (!selectedClassId) return;
                 try {
@@ -1787,20 +1786,35 @@
                     const userDoc = await userRef.get();
 
                     if (!userDoc.exists) {
-                        const newUserProfile = {
-                            name: gUser.displayName || '이름 없음',
-                            schoolAccount: gUser.email,
-                        };
-
+                        // [수정됨] 학생 이름/학번 파싱 로직
                         if (role === 'student') {
-                            newUserProfile.studentId = ''; 
-                            newUserProfile.classIds = [];
-                            newUserProfile.approvedBy = {};
+                            const displayName = gUser.displayName || '';
+                            let studentId = '';
+                            let name = displayName;
+
+                            if (displayName && /^\d{5}/.test(displayName) && displayName.length > 5) {
+                                studentId = displayName.substring(0, 5);
+                                name = displayName.substring(5);
+                            }
+                            
+                            const newUserProfile = {
+                                name: name,
+                                schoolAccount: gUser.email,
+                                studentId: studentId,
+                                classIds: [],
+                                approvedBy: {},
+                            };
+                            await userRef.set(newUserProfile);
                             setModalState({ isOpen: true, title: '첫 로그인', content: '계정이 생성되었습니다! 선생님이 학급에 초대하고 승인하면 서비스 이용이 가능합니다.' });
-                        } else {
+
+                        } else { // 교사일 경우
+                             const newUserProfile = {
+                                name: gUser.displayName || '이름 없음',
+                                schoolAccount: gUser.email,
+                            };
+                             await userRef.set(newUserProfile);
                              setModalState({ isOpen: true, title: '환영합니다!', content: '교사 계정이 생성되었습니다. \'학급 관리\' 메뉴에서 첫 학급을 만들어주세요.' });
                         }
-                        await userRef.set(newUserProfile);
                     }
                 } catch (err) {
                     setError(mapAuthCodeToMessage(err.code));
