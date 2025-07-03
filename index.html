@@ -869,7 +869,7 @@
                     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                         <h3 className="text-xl font-bold mb-4">새 학급 추가</h3>
                         <form onSubmit={handleAddClass} className="flex flex-col md:flex-row gap-4 items-end">
-                            <div className="flex-1 w-full"><label className="text-sm font-medium text-red-600">학급명 ('학년, 반' 숫자가 순서대로 들어가도록 설정하세요!! '시험 점수' 기능 구글시트 특정 탭 호출에 필요.)</label><input type="text" value={className} onChange={e => setClassName(e.target.value)} placeholder="예시: 1귀염둥이3반, 2학년1반 국어, 체육3-2, 24기가 등 - '학년, 반' 숫자가 순서대로 들어가도록 지정" className="w-full mt-1 p-2 border rounded-md" /></div>
+                            <div className="flex-1 w-full"><label className="text-sm font-medium text-red-600">학급명 ('학년, 반' 숫자가 순서대로 들어가도록 설정하세요!! '시험 점수' 기능 구글시트 특정 탭 호출에 필요.)</label><input type="text" value={className} onChange={e => setClassName(e.target.value)} placeholder="예시: 2학년 1반, 1학년의 귀염둥이 3반, 3-2, 24 등 - '학년, 반' 숫자가 순서대로 들어가도록 지정" className="w-full mt-1 p-2 border rounded-md" /></div>
                             <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급 코드 (6자리, 첫 글자는 영문)</label><input type="text" value={classCode} onChange={e => handleClassCodeChange(e.target.value)} maxLength={6} placeholder="예: A12345" className="w-full mt-1 p-2 border rounded-md" /></div>
                             <button type="submit" className="btn-sky w-full md:w-auto !px-6 !py-2">추가</button>
                         </form>
@@ -1860,73 +1860,74 @@
                 );
             };
 
-                return (
-                    <div>
-                        {/* 제목과 토글 스위치 (수정 없음) */}
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-3xl font-bold text-gray-800">🪄 랜덤 자리 배치</h2>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-sm font-semibold ${useClassData ? 'text-green-600' : 'text-gray-400'}`}>현재 학급 명단 사용</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" onChange={handleModeChange} checked={!useClassData} className="sr-only peer" />
-                                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                                </label>
-                                <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
-                            </div>
-                        </div>
-                
-                        {/* 👇 이 div가 자리배치표와 제어판 전체를 세로로 쌓는 역할 */}
-                        <div className="flex flex-col gap-6">
-                            
-                            {/* 자리배치표 (수정 없음) */}
-                            <main id="seatingChartArea" className="bg-white p-2 sm:p-4 rounded-xl shadow-md">
-                                {/* ... 내부 코드 생략 ... */}
-                            </main>
-                
-                            {/* - - - - - - - - - - - - - - - - - - - - - - - - -
-                              -                   ▼ 핵심 수정 부분 ▼                   -
-                              - '실행'과 '배치 설정' 패널을 하나의 div로 감싸야 합니다. -
-                              - - - - - - - - - - - - - - - - - - - - - - - - -
-                            */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                                {/* 실행 섹션 (1/3 너비) */}
-                                <div className="bg-white p-4 rounded-xl shadow-md lg:col-span-1">
-                                    <h3 className="text-lg font-bold mb-3">실행</h3>
-                                    <div className="flex flex-col gap-2">
-                                        <button onClick={handleRandomize} className="btn-green w-full">🪄 자리 섞기!</button>
-                                        <button onClick={handleSaveAsImage} className="btn-sky w-full">🖼️ 이미지로 저장</button>
-                                    </div>
-                                </div>
-                
-                                {/* 배치 설정 섹션 (2/3 너비) */}
-                                {!useClassData &&
-                                    <div className="bg-white p-4 rounded-xl shadow-md lg:col-span-2">
-                                        <h2 className="text-lg font-semibold mb-2 border-b pb-2">배치 설정</h2>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                            {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
-                                                <div key={key} className="p-2 bg-slate-50 rounded-lg border">
-                                                    <h3 className="font-bold text-base text-slate-700 mb-2">{name}</h3>
-                                                    <div className="flex items-center gap-2">
-                                                        <label className="text-xs font-medium w-8">행:</label>
-                                                        <input type="number" value={rows} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} className="w-full p-1 border rounded-md"/>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 mt-2">
-                                                        <label className="text-xs font-medium w-8">열:</label>
-                                                        <input type="number" value={cols} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} className="w-full p-1 border rounded-md"/>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                }
-                            </div> {/* <-- 이 div가 '실행'과 '배치설정'을 모두 감싸고 있는지 확인하세요. */}
-                            
-                            {/* 수동 명단 관리 (수정 없음) */}
-                            {!useClassData && <ManualSeatEditor />}
+            return (
+                <div>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-3xl font-bold text-gray-800">🪄 랜덤 자리 배치</h2>
+                        <div className="flex items-center gap-3">
+                            <span className={`text-sm font-semibold ${useClassData ? 'text-green-600' : 'text-gray-400'}`}>현재 학급 명단 사용</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" onChange={handleModeChange} checked={!useClassData} className="sr-only peer" />
+                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                            </label>
+                            <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
                         </div>
                     </div>
-                );
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <main id="seatingChartArea" className="lg:col-span-3 bg-white p-2 sm:p-4 rounded-xl shadow-md">
+                            <div className="overflow-x-auto pb-2">
+                                <div className="bg-white min-w-max mx-auto">
+                                    <div className="flex justify-center items-start gap-4 sm:gap-8 md:gap-12 p-4">
+                                        {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
+                                            <div key={key} className="flex flex-col items-center">
+                                                <div className={`mb-2 text-base font-semibold text-gray-600 ${isScreenshotMode ? 'invisible' : ''}`}>{name}</div>
+                                                <div className="grid gap-3" style={{ gridTemplateRows: `repeat(${rows}, 1fr)`, gridTemplateColumns: `repeat(${cols}, minmax(130px, 1fr))` }}>
+                                                    {Array.from({ length: rows * cols }).map((_, i) => {
+                                                        const r = Math.floor(i / cols); const c = i % cols;
+                                                        const seatId = `${key.charAt(0).toUpperCase()}-${r + 1}-${c + 1}`;
+                                                        const student = state.students.find(s=>s.id === state.seatAssignments[seatId]);
+                                                        return (<div key={seatId} className={`relative w-full h-24 border rounded-lg shadow-sm flex flex-col items-center justify-center transition-colors ${(state.fixedSeats.has(seatId) && !isScreenshotMode) ? 'bg-rose-200 border-rose-400' : 'bg-white'}`}>
+                                                            {!isScreenshotMode && <div className="absolute top-1.5 left-2.5 text-xs text-gray-400 font-mono">{seatId}</div>}
+                                                            {!isScreenshotMode && <button onClick={() => dispatch({type: 'TOGGLE_FIX_SEAT', payload: {seatId, showModal: (msg) => setModalState({isOpen: true, title: "알림", content: msg}) }})} title="고정/해제" className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full border transition-all ${state.fixedSeats.has(seatId) ? 'bg-rose-500 border-rose-700' : 'bg-gray-300 hover:bg-gray-400 border-gray-400'}`}><span className="text-white text-sm">{state.fixedSeats.has(seatId) ? '🔒' : '🔓'}</span></button>}
+                                                            {student && <div className="text-gray-800 flex flex-col items-center justify-center text-center -mt-3"><div className="font-bold text-lg">{student.name}</div><div className="text-base text-gray-500">({student.studentId}번)</div></div>}
+                                                            {!isScreenshotMode && <div className="absolute bottom-1.5 w-full px-2"><select value={state.seatAssignments[seatId] || ''} onChange={(e) => dispatch({type: 'SET_SEAT_ASSIGNMENT', payload: {seatId, studentIdStr: e.target.value }})} className="w-full text-sm border-gray-300 rounded p-1"><option value="">--</option>{state.students.sort((a,b) => a.studentId - b.studentId).map(s => (<option key={s.id} value={s.id}>{s.studentId}. {s.name}</option>))}</select></div>}
+                                                        </div>);
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="w-full flex justify-center mt-2 pb-4"><h3 className="w-full max-w-md text-center font-bold text-xl p-2 bg-slate-200 text-slate-500 rounded-md">교탁</h3></div>
+                                </div>
+                            </div>
+                        </main>
+                        <aside className="lg:col-span-1 space-y-4">
+                            <div className="bg-white p-4 rounded-xl shadow-md">
+                                <h3 className="text-lg font-bold mb-3">실행</h3>
+                                <div className="flex flex-col gap-2">
+                                    <button onClick={handleRandomize} className="btn-green w-full">🪄 자리 섞기!</button>
+                                    <button onClick={handleSaveAsImage} className="btn-sky w-full">🖼️ 이미지로 저장</button>
+                                </div>
+                            </div>
+                            {!useClassData && 
+                                <div className="bg-white p-4 rounded-xl shadow-md">
+                                    <h2 className="text-lg font-semibold mb-1 border-b pb-1">배치 설정</h2>
+                                    {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
+                                        <div key={key} className="p-2 bg-slate-50 rounded-lg border mt-2">
+                                            <h3 className="font-bold text-base text-slate-700 mb-2">{name}</h3>
+                                            <div className="flex items-center gap-2"><label className="text-xs font-medium w-8">행:</label><input type="number" value={rows} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} className="w-full p-1 border rounded-md"/></div>
+                                            <div className="flex items-center gap-2 mt-2"><label className="text-xs font-medium w-8">열:</label><input type="number" value={cols} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} className="w-full p-1 border rounded-md"/></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            }
+                        </aside>
+                    </div>
+                    {!useClassData && <ManualSeatEditor />}
+                </div>
+            );
+        };
+
         // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         // ★★★★★                 컴포넌트 종료                 ★★★★★
         // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
