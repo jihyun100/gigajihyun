@@ -1644,15 +1644,25 @@
             useEffect(() => {
                 let unsub = () => {};
                 if (isTeacher) {
-                    unsub = db.collection(CONSTANTS.COLLECTIONS.CLASSES).where('teacherId', '==', user.uid).onSnapshot(snapshot => {
-                        const classList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setClasses(classList);
-                        if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
-                            setSelectedClassId(classList[0].id);
-                        } else if (classList.length === 0) setSelectedClassId('');
-                        setLoading(prev => ({ ...prev, classes: false }));
-                    });
+                    // 1. 여기서 .orderBy('className')를 제거합니다.
+                    unsub = db.collection(CONSTANTS.COLLECTIONS.CLASSES)
+                        .where('teacherId', '==', user.uid)
+                        .onSnapshot(snapshot => {
+                            const classList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            
+                            // 2. 데이터를 받은 후, 자바스크립트로 직접 정렬합니다.
+                            classList.sort((a, b) => a.className.localeCompare(b.className));
+
+                            setClasses(classList);
+                            if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
+                                setSelectedClassId(classList[0].id);
+                            } else if (classList.length === 0) {
+                                setSelectedClassId('');
+                            }
+                            setLoading(prev => ({ ...prev, classes: false }));
+                        });
                 } else {
+                    // 학생 코드는 이전과 동일하게 유지됩니다.
                     const unsubStudent = db.collection('students').doc(user.uid).onSnapshot(async (studentDoc) => {
                         if (studentDoc.exists) {
                             const studentProfile = studentDoc.data();
@@ -1661,7 +1671,10 @@
                             if (approvedClassIds.length > 0) {
                                 const classPromises = approvedClassIds.map(id => db.collection('classes').doc(id).get());
                                 const classDocs = await Promise.all(classPromises);
-                                const classList = classDocs.filter(doc => doc.exists).map(doc => ({ id: doc.id, ...doc.data() }));
+                                let classList = classDocs.filter(doc => doc.exists).map(doc => ({ id: doc.id, ...doc.data() }));
+                                
+                                classList.sort((a, b) => a.className.localeCompare(b.className));
+
                                 setClasses(classList);
                                  if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
                                       setSelectedClassId(classList[0].id);
@@ -1678,7 +1691,7 @@
                     return () => unsubStudent();
                 }
                 return () => unsub();
-            }, [user.uid, isTeacher]);
+            }, [user.uid, isTeacher, selectedClassId]); // selectedClassId를 의존성 배열에 추가하여 안정성을 높입니다.
             
             useEffect(() => {
                 if (!selectedClassId || !isTeacher) {  
