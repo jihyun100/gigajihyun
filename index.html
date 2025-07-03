@@ -1644,20 +1644,14 @@
             useEffect(() => {
                 let unsub = () => {};
                 if (isTeacher) {
-                    // ★★★★★ .orderBy('className') 추가 ★★★★★
-                    unsub = db.collection(CONSTANTS.COLLECTIONS.CLASSES)
-                        .where('teacherId', '==', user.uid)
-                        .orderBy('className') // 학급 이름으로 정렬
-                        .onSnapshot(snapshot => {
-                            const classList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            setClasses(classList);
-                            if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
-                                setSelectedClassId(classList[0].id);
-                            } else if (classList.length === 0) {
-                                setSelectedClassId('');
-                            }
-                            setLoading(prev => ({ ...prev, classes: false }));
-                        });
+                    unsub = db.collection(CONSTANTS.COLLECTIONS.CLASSES).where('teacherId', '==', user.uid).onSnapshot(snapshot => {
+                        const classList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setClasses(classList);
+                        if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
+                            setSelectedClassId(classList[0].id);
+                        } else if (classList.length === 0) setSelectedClassId('');
+                        setLoading(prev => ({ ...prev, classes: false }));
+                    });
                 } else {
                     const unsubStudent = db.collection('students').doc(user.uid).onSnapshot(async (studentDoc) => {
                         if (studentDoc.exists) {
@@ -1668,10 +1662,6 @@
                                 const classPromises = approvedClassIds.map(id => db.collection('classes').doc(id).get());
                                 const classDocs = await Promise.all(classPromises);
                                 const classList = classDocs.filter(doc => doc.exists).map(doc => ({ id: doc.id, ...doc.data() }));
-                                
-                                // ★★★★★ 학생의 학급 목록도 정렬 ★★★★★
-                                classList.sort((a, b) => a.className.localeCompare(b.className));
-
                                 setClasses(classList);
                                  if (classList.length > 0 && (!selectedClassId || !classList.some(c => c.id === selectedClassId))) {
                                       setSelectedClassId(classList[0].id);
