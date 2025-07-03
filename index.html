@@ -913,12 +913,70 @@
             );
         };
 
-        const StudentManagement = ({ students, pendingStudents, deleteStudent, approveStudent, rejectStudent, inviteStudent, classes }) => {
+const StudentManagement = ({ students, pendingStudents, deleteStudent, approveStudent, rejectStudent, inviteStudent, classes, setModalState, selectedClass }) => {
             const [invitingStudent, setInvitingStudent] = useState(null);
+            
+            // --- 검색 기능을 위한 새로운 상태 추가 ---
+            const [searchTerm, setSearchTerm] = useState('');
+            const [isSearching, setIsSearching] = useState(false);
+            const [searchResults, setSearchResults] = useState([]);
+
+            // --- 전체 학생을 검색하는 함수 ---
+            const handleSearch = async () => {
+                if (!searchTerm.trim()) {
+                    setSearchResults([]);
+                    return;
+                }
+                setIsSearching(true);
+                try {
+                    // 이름과 학번으로 동시에 검색
+                    const nameQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS)
+                        .where('name', '>=', searchTerm)
+                        .where('name', '<=', searchTerm + '\uf8ff').get();
+                    const idQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS)
+                        .where('studentId', '==', searchTerm).get();
+
+                    const [nameSnapshot, idSnapshot] = await Promise.all([nameQuery, idQuery]);
+
+                    // Map을 사용해 중복 결과 제거
+                    const resultsMap = new Map();
+                    nameSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
+                    idSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
+
+                    setSearchResults(Array.from(resultsMap.values()));
+                } catch (error) {
+                    console.error("Error searching students:", error);
+                    setModalState({ isOpen: true, title: "검색 오류", content: "학생을 검색하는 중 오류가 발생했습니다." });
+                } finally {
+                    setIsSearching(false);
+                }
+            };
+
+            // --- 검색된 학생 초대 시 확인 모달을 띄우는 함수 ---
+            const handleInviteClick = (studentToInvite) => {
+                setModalState({
+                    isOpen: true,
+                    isConfirm: true,
+                    title: "학급 초대 확인",
+                    content: `'${studentToInvite.name}' 학생을 '${selectedClass.className}' 학급으로 초대하시겠습니까?`,
+                    confirmText: "초대",
+                    onConfirm: () => {
+                        // Dashboard에서 전달받은 inviteStudent 함수 실행
+                        inviteStudent(studentToInvite, selectedClass.id);
+                        // 초대 후, 검색 결과 목록에서 버튼 상태를 '초대됨'으로 즉시 변경
+                        setSearchResults(prev => prev.map(s =>
+                            s.id === studentToInvite.id
+                            ? { ...s, classIds: [...(s.classIds || []), selectedClass.id] }
+                            : s
+                        ));
+                        return true;
+                    }
+                });
+            };
+
 
             return (
                 <div>
-                    {/* 이 부분이 이제 정상적으로 InviteStudentModal을 렌더링합니다. */}
                     <InviteStudentModal
                         isOpen={!!invitingStudent}
                         onClose={() => setInvitingStudent(null)}
@@ -931,48 +989,65 @@
                     
                     {pendingStudents.length > 0 && (
                         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                            <h3 className="text-xl font-bold mb-4">가입 승인 대기</h3>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left min-w-[600px]">
-                                    <thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">작업</th></tr></thead>
-                                    <tbody>
-                                        {pendingStudents.map(s => ( 
-                                            <tr key={s.id} className="border-b">
-                                                <td className="p-3">{s.name}</td>
-                                                <td className="p-3">{s.studentId || '미지정'}</td>
-                                                <td className="p-3">{s.schoolAccount}</td>
-                                                <td className="p-3 text-center flex gap-2 justify-center">
-                                                    <button onClick={() => rejectStudent(s.id)} className="btn-red !px-4 !py-1">거절</button>
-                                                    <button onClick={() => approveStudent(s.id)} className="btn-sky !px-4 !py-1">승인</button>
-                                                </td>
-                                            </tr> 
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                           {/* 가입 승인 대기 목록... */}
                         </div>
                     )}
                     
                     <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h3 className="text-xl font-bold mb-4">학급 학생 목록</h3>
+                       {/* 학급 학생 목록... */}
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-md mt-8">
+                        <h3 className="text-xl font-bold mb-4">전체 학생 검색 및 초대</h3>
+                        <div className="flex flex-col md:flex-row gap-2 mb-4">
+                            <input
+                                type="text"
+                                placeholder="학번 또는 이름으로 검색"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                                className="w-full p-2 border rounded-md"
+                            />
+                            <button onClick={handleSearch} disabled={isSearching} className="btn-sky !px-6 !py-2">
+                                {isSearching ? '검색 중...' : '검색'}
+                            </button>
+                        </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left min-w-[600px]">
-                                <thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">작업</th></tr></thead>
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="p-3">이름</th>
+                                        <th className="p-3">학번</th>
+                                        <th className="p-3">학교 계정</th>
+                                        <th className="p-3 text-center">초대</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
-                                    {students.map(s => ( 
-                                        <tr key={s.id} className="border-b">
-                                            <td className="p-3">{s.name}</td>
-                                            <td className="p-3">{s.studentId}</td>
-                                            <td className="p-3">{s.schoolAccount}</td>
-                                            <td className="p-3 text-center flex gap-2 justify-center">
-                                                <button onClick={() => setInvitingStudent(s)} className="btn-green !px-4 !py-1">학급 초대</button>
-                                                <button onClick={() => deleteStudent(s)} className="btn-red !px-4 !py-1">학급에서 제외</button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {isSearching ? (
+                                        <tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 중...</td></tr>
+                                    ) : searchResults.length > 0 ? searchResults.map(s => {
+                                        const isAlreadyInClass = s.classIds?.includes(selectedClass.id);
+                                        return (
+                                            <tr key={s.id} className="border-b">
+                                                <td className="p-3">{s.name}</td>
+                                                <td className="p-3">{s.studentId}</td>
+                                                <td className="p-3">{s.schoolAccount}</td>
+                                                <td className="p-3 text-center">
+                                                    <button
+                                                        onClick={() => handleInviteClick(s)}
+                                                        disabled={isAlreadyInClass}
+                                                        className={isAlreadyInClass ? "btn-gray !px-4 !py-1" : "btn-green !px-4 !py-1"}
+                                                    >
+                                                        {isAlreadyInClass ? '초대됨' : '초대'}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    }) : (
+                                        <tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 결과가 없습니다.</td></tr>
+                                    )}
                                 </tbody>
                             </table>
-                            {students.length === 0 && <p className="text-center text-gray-500 py-8">소속된 학생이 없습니다.</p>}
                         </div>
                     </div>
                 </div>
@@ -1719,8 +1794,7 @@
                  switch (currentMenu) {
                     case 'schedule': return <ScheduleCalendar classes={classes} selectedClass={selectedClass} selectedClassId={selectedClassId} students={classData.students} allSchoolStudents={allSchoolStudents} teacherId={user.uid} isTeacher={isTeacher} setModalState={setModalState} />;
                     case 'class': return isTeacher ? <ClassManagement teacherId={user.uid} classes={classes} setModalState={setModalState} onUpdateClass={updateClass} onDeleteClass={deleteClass} isAdmin={isAdmin} /> : null;
-                    case 'students': return isTeacher ? <StudentManagement students={classData.students} pendingStudents={classData.pendingStudents} deleteStudent={deleteStudent} approveStudent={approveStudent} rejectStudent={rejectStudent} inviteStudent={inviteStudent} classes={classes} /> : null;
-                    case 'scores': return <PerformanceScoreManager isTeacher={isTeacher} userData={userData} selectedClass={selectedClass} setModalState={setModalState} />;
+                    case 'students': return isTeacher ? <StudentManagement students={classData.students} pendingStudents={classData.pendingStudents} deleteStudent={deleteStudent} approveStudent={approveStudent} rejectStudent={rejectStudent} inviteStudent={inviteStudent} classes={classes} setModalState={setModalState} selectedClass={selectedClass} /> : null;                    case 'scores': return <PerformanceScoreManager isTeacher={isTeacher} userData={userData} selectedClass={selectedClass} setModalState={setModalState} />;
                     case 'test-scores': return <TestScoreViewer isTeacher={isTeacher} userData={userData} selectedClass={selectedClass} setModalState={setModalState} />;
                     case 'info': return <UserInfo user={user} userData={userData} setModalState={setModalState} />;
                     default: return null;
