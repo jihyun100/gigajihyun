@@ -869,7 +869,7 @@
                     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                         <h3 className="text-xl font-bold mb-4">새 학급 추가</h3>
                         <form onSubmit={handleAddClass} className="flex flex-col md:flex-row gap-4 items-end">
-                            <div className="flex-1 w-full"><label className="text-sm font-medium text-red-600">학급명 ('학년, 반' 숫자가 순서대로 들어가도록 설정하세요!! '시험 점수' 기능 구글시트 특정 탭 호출에 필요.)</label><input type="text" value={className} onChange={e => setClassName(e.target.value)} placeholder="예시: 1귀염둥이 3반, 2학년1반 국어, 체육3-2, 24수학 등 - '학년, 반' 숫자가 순서대로 들어가도록 지정" className="w-full mt-1 p-2 border rounded-md" /></div>
+                            <div className="flex-1 w-full"><label className="text-sm font-medium text-red-600">학급명 ('학년, 반' 숫자가 순서대로 들어가도록 설정하세요!! '시험 점수' 기능 구글시트 특정 탭 호출에 필요.)</label><input type="text" value={className} onChange={e => setClassName(e.target.value)} placeholder="예시: 1귀염둥이3반, 2학년1반 국어, 체육3-2, 24기가 등 - '학년, 반' 숫자가 순서대로 들어가도록 지정" className="w-full mt-1 p-2 border rounded-md" /></div>
                             <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급 코드 (6자리, 첫 글자는 영문)</label><input type="text" value={classCode} onChange={e => handleClassCodeChange(e.target.value)} maxLength={6} placeholder="예: A12345" className="w-full mt-1 p-2 border rounded-md" /></div>
                             <button type="submit" className="btn-sky w-full md:w-auto !px-6 !py-2">추가</button>
                         </form>
@@ -1873,8 +1873,8 @@
                             <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        <main id="seatingChartArea" className="lg:col-span-3 bg-white p-2 sm:p-4 rounded-xl shadow-md">
+                    <div className="flex flex-col gap-6"> 
+                        <main id="seatingChartArea" className="bg-white p-2 sm:p-4 rounded-xl shadow-md">
                             <div className="overflow-x-auto pb-2">
                                 <div className="bg-white min-w-max mx-auto">
                                     <div className="flex justify-center items-start gap-4 sm:gap-8 md:gap-12 p-4">
@@ -1901,7 +1901,7 @@
                                 </div>
                             </div>
                         </main>
-                        <aside className="lg:col-span-1 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="bg-white p-4 rounded-xl shadow-md">
                                 <h3 className="text-lg font-bold mb-3">실행</h3>
                                 <div className="flex flex-col gap-2">
@@ -1909,19 +1909,25 @@
                                     <button onClick={handleSaveAsImage} className="btn-sky w-full">🖼️ 이미지로 저장</button>
                                 </div>
                             </div>
-                            {!useClassData && 
+                            {!useClassData &&
                                 <div className="bg-white p-4 rounded-xl shadow-md">
                                     <h2 className="text-lg font-semibold mb-1 border-b pb-1">배치 설정</h2>
                                     {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
                                         <div key={key} className="p-2 bg-slate-50 rounded-lg border mt-2">
                                             <h3 className="font-bold text-base text-slate-700 mb-2">{name}</h3>
-                                            <div className="flex items-center gap-2"><label className="text-xs font-medium w-8">행:</label><input type="number" value={rows} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} className="w-full p-1 border rounded-md"/></div>
-                                            <div className="flex items-center gap-2 mt-2"><label className="text-xs font-medium w-8">열:</label><input type="number" value={cols} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} className="w-full p-1 border rounded-md"/></div>
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-xs font-medium w-8">행:</label>
+                                                <input type="number" value={rows} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} className="w-full p-1 border rounded-md"/>
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <label className="text-xs font-medium w-8">열:</label>
+                                                <input type="number" value={cols} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} className="w-full p-1 border rounded-md"/>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             }
-                        </aside>
+                        </div>
                     </div>
                     {!useClassData && <ManualSeatEditor />}
                 </div>
