@@ -1571,14 +1571,29 @@
             switch (action.type) {
                 case 'LOAD_DATA_FROM_FILE': {
                     const { students, sections, seatAssignments, fixedSeats } = action.payload;
+                    const formattedStudents = students.map(s => {
+                        if (s.studentId !== undefined) {
+                            return s;
+                        }
+                        if (s.studentId === undefined && typeof s.id === 'number') {
+                            return {
+                                ...s, // name은 그대로 유지
+                                studentId: s.id, // 파일의 id를 studentId로 사용
+                                id: `manual-${s.id}` // 내부적으로 사용할 id를 새로 생성
+                            };
+                        }
+                        return s;
+                    });
+        
                     return { 
                         ...state,
-                        students: students || [], 
+                        students: formattedStudents || [], 
                         sections: sections || state.sections, 
                         seatAssignments: seatAssignments || {}, 
                         fixedSeats: new Set(fixedSeats || []) 
                     };
                 }
+        
                 case 'LOAD_STUDENTS': {
                     const students = action.payload;
                     const newState = { ...createInitialSeatingState(), students };
