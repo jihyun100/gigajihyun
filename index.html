@@ -1181,7 +1181,7 @@
             const [file, setFile] = useState(null);
             const [uploading, setUploading] = useState(false);
             const fileInputRef = useRef(null);
-
+        
             useEffect(() => {
                 if (!selectedClass?.id) {
                     setAssessmentData(null); setLoading(false); return;
@@ -1193,7 +1193,7 @@
                 }, err => { setError('데이터를 불러오는 중 오류가 발생했습니다.'); setLoading(false); });
                 return () => unsub();
             }, [selectedClass?.id]);
-
+        
             const handleFileChange = (e) => {
                 const f = e.target.files[0];
                 if (f && (f.name.endsWith('.xlsx') || f.name.endsWith('.xls'))) { setFile(f); } 
@@ -1202,7 +1202,7 @@
                     setFile(null); if (fileInputRef.current) fileInputRef.current.value = "";
                 }
             };
-
+        
             const handleUpload = () => {
                 if (!file) { setModalState({ isOpen: true, title: '파일 없음', content: '업로드할 엑셀 파일을 선택해주세요.' }); return; }
                 if (!grade) { setModalState({ isOpen: true, title: '학년 미선택', content: '점수를 등록할 학년을 선택해주세요.' }); return; }
@@ -1230,7 +1230,7 @@
                             if (!classNum || !studentNum || !studentName) return null;
                             return { studentId: `${grade}${classNum}${studentNum.padStart(2, '0')}`, name: studentName, scores: scoreColumnIndices.map(colIndex => row[colIndex]?.toString() || '-') };
                         }).filter(Boolean);
-
+        
                         const dataToSave = { grade, fileName: file.name, uploadedAt: new Date().toISOString(), headers: assessmentHeaders, scores: studentScores };
                         await db.collection(CONSTANTS.COLLECTIONS.ASSESSMENTS).doc(selectedClass.id).set(dataToSave);
                         setModalState({ isOpen: true, title: '업로드 성공', content: '수행평가 점수를 성공적으로 등록했습니다.' });
@@ -1241,17 +1241,17 @@
                 };
                 reader.readAsArrayBuffer(file);
             };
-
+        
             const handleDelete = () => {
                 setModalState({
                     isOpen: true, isConfirm: true, title: "점수 삭제 확인", content: `이 학급의 모든 수행평가 점수 데이터를 삭제하시겠습니까?`, confirmText: '삭제',
                     onConfirm: async () => { await db.collection(CONSTANTS.COLLECTIONS.ASSESSMENTS).doc(selectedClass.id).delete(); return true; }
                 });
             };
-
+        
             if (loading) return <div className="h-64 w-full skeleton"></div>;
             if (error) return <div className="bg-red-100 text-red-700 p-4 rounded-lg">{error}</div>;
-
+        
             if (isTeacher) {
                 const selectedStudentRecord = (assessmentData && selectedStudentId !== 'all') ? assessmentData.scores.find(s => s.studentId === selectedStudentId) : null;
                 return (
@@ -1278,15 +1278,55 @@
                                         </div>
                                         <button onClick={handleDelete} className="btn-red !px-4 !py-2">데이터 삭제</button>
                                     </div>
-                                    <div className="max-w-sm"><label htmlFor="student-perf-select" className="block text-sm font-medium text-gray-700 mb-1">학생 선택</label><select id="student-perf-select" className="w-full p-2 border rounded-md" value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)}><option value="all">전체 학생 표로 보기</option>{assessmentData.scores.map(student => (<option key={student.studentId} value={student.studentId}>{student.name} ({student.studentId})</option>))}</select></div>
+                                    <div className="max-w-sm">
+                                        <label htmlFor="student-perf-select" className="block text-sm font-medium text-gray-700 mb-1">학생 선택</label>
+                                        <select id="student-perf-select" className="w-full p-2 border rounded-md" value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)}>
+                                            <option value="all">전체 학생 표로 보기</option>
+                                            {assessmentData.scores.map(student => (<option key={student.studentId} value={student.studentId}>{student.name} ({student.studentId})</option>))}
+                                        </select>
+                                    </div>
                                 </div>
-                                {selectedStudentId !== 'all' && (selectedStudentRecord ? <StudentPerformanceCard headers={assessmentData.headers} studentRecord={selectedStudentRecord} /> : <div className="bg-white p-6 rounded-lg shadow-md"><p className="text-center text-gray-500">선택된 학생의 점수 정보를 불러올 수 없습니다.</p></div>)}
+        
+                                {selectedStudentId === 'all' ? (
+                                    <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                                        <table className="w-full text-left min-w-[800px]">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="p-3 font-bold text-center">학번</th>
+                                                    <th className="p-3 font-bold text-center">이름</th>
+                                               .sort((a, b) => a.studentId.localeCompare(b.studentId))
+                                                    .map((student, rowIndex) => (
+                                                    <tr key={rowIndex} className="border-b hover:bg-gray-50">
+                                                        <td className="p-3 font-mono text-center">{student.studentId}</td>
+                                                        <td className="p-3 font-mono text-center">{student.name}</td>
+                                                        {student.scores.map((score, scoreIndex) => (
+                                                            <td key={scoreIndex} className="p-3 font-mono text-center">{score}</td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    selectedStudentRecord ? 
+                                        <StudentPerformanceCard headers={assessmentData.headers} studentRecord={selectedStudentRecord} /> :
+                                        <div className="bg-white p-6 rounded-lg shadow-md"><p className="text-center text-gray-500">선택된 학생의 점수 정보를 불러올 수 없습니다.</p></div>
+                                )}                                     {assessmentData.headers.map((header, index) => (
+                                                        <th key={index} className="p-3 font-bold text-center">
+                                                            <div>{header.name}</div>
+                                                            <div className="font-normal text-xs text-gray-500">({header.perfectScore})</div>
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {assessmentData.scores
                             </div>
                         )}
                     </div>
                 );
             }
-
+        
             const studentRecord = assessmentData?.scores.find(s => s.studentId === userData.studentId);
             return (
                 <div>
