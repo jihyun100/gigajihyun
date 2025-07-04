@@ -1571,30 +1571,13 @@
             switch (action.type) {
                 case 'LOAD_DATA_FROM_FILE': {
                     const { students, sections, seatAssignments, fixedSeats } = action.payload;
-                    const idMap = {};
-                    const formattedStudents = students.map(s => {
-                        const studentNumber = s.id || s.studentId;
-                        const newInternalId = `manual-${studentNumber}`;
-                        idMap[studentNumber] = newInternalId;
-                        return {
-                            id: newInternalId,
-                            name: s.name,
-                            studentId: studentNumber
-                        };
-                    });
-        
-                    const formattedAssignments = {};
-                    if (seatAssignments) {
-                        for (const seatId in seatAssignments) {
-                            const oldStudentId = seatAssignments[seatId];
-                            const newInternalId = idMap[oldStudentId];
-                            if (newInternalId) {
-                                formattedAssignments[seatId] = newInternalId;
-                            }
-                        }
-                    }
-                    
-                    return { ...state, students: formattedStudents, sections: sections || state.sections, seatAssignments: formattedAssignments, fixedSeats: new Set(fixedSeats || []) };
+                    return { 
+                        ...state,
+                        students: students || [], 
+                        sections: sections || state.sections, 
+                        seatAssignments: seatAssignments || {}, 
+                        fixedSeats: new Set(fixedSeats || []) 
+                    };
                 }
                 case 'LOAD_STUDENTS': {
                     const students = action.payload;
