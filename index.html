@@ -1312,69 +1312,99 @@
         });
 
         const teamReducer = (state, action) => {
-            switch (action.type) {
-                case 'LOAD_STUDENTS':
-                    return { ...state, teams:[], fixedStudentIds: new Set(), students: action.payload };
-                case 'RESET_TO_MANUAL': 
-                    return createInitialTeamState();
-                case 'SET_TEAM_COUNT':
-                    return { ...state, teamCount: action.payload };
-                case 'GENERATE_TEAMS': {
-                    const { students, teamCount, fixedStudentIds, teams: oldTeams } = state;
-                    if (students.length === 0 || teamCount < 1) return state;
-                    const newTeams = createTeamLayout(students, teamCount, fixedStudentIds, oldTeams);
-                    return { ...state, teams: newTeams };
-                }
-                case 'SORT_TEAMS': {
-                    const sortedTeams = state.teams.map(team => ({...team, members: [...team.members].sort((a, b) => a.studentId - b.studentId)}));
-                    return { ...state, teams: sortedTeams };
-                }
-                case 'TOGGLE_FIXED_STUDENT': {
-                    const studentId = action.payload;
-                    const newFixedIds = new Set(state.fixedStudentIds);
-                    newFixedIds.has(studentId) ? newFixedIds.delete(studentId) : newFixedIds.add(studentId);
-                    return { ...state, fixedStudentIds: newFixedIds };
-                }
-                case 'SWAP_STUDENTS': {
-                    const { studentAId, studentBId } = action.payload;
-                    if (!studentAId || !studentBId || studentAId === studentBId) return state;
-                    const newTeams = state.teams.map(team => ({ ...team, members: [...team.members] }));
-                    let studentAInfo = null, studentBInfo = null;
-                    newTeams.forEach(t => t.members.forEach((s, idx) => {
-                        if (s.id === studentAId) studentAInfo = { student: s, team: t, index: idx };
-                        if (s.id === studentBId) studentBInfo = { student: s, team: t, index: idx };
-                    }));
-                    if (studentAInfo && studentBInfo) {
-                        studentAInfo.team.members[studentAInfo.index] = studentBInfo.student;
-                        studentBInfo.team.members[studentBInfo.index] = studentAInfo.student;
-                    }
-                    return { ...state, teams: newTeams };
-                }
-                case 'UPDATE_STUDENT': {
-                    const { id, field, value } = action.payload;
-                    const updatedStudents = state.students.map(s => (s.id === id ? { ...s, [field]: value } : s));
-                    return { ...state, students: updatedStudents };
-                }
-                case 'ADD_STUDENT': {
-                    const existingIds = state.students.map(s => s.studentId);
-                    let newStudentId = 1;
-                    while(existingIds.includes(newStudentId)) { newStudentId++; }
-                    return { ...state, students: [...state.students, { id: `manual-${newStudentId}`, studentId: newStudentId, name: "새 학생" }]};
-                }
-                case 'DELETE_STUDENT': {
-                    const studentIdToDelete = action.payload;
-                    const newFixedIds = new Set(state.fixedStudentIds);
-                    newFixedIds.delete(studentIdToDelete);
-                    return {
-                        ...state,
-                        students: state.students.filter(s => s.id !== studentIdToDelete),
-                        teams: state.teams.map(team => ({ ...team, members: team.members.filter(s => s.id !== studentIdToDelete) })),
-                        fixedStudentIds: newFixedIds
-                    };
-                }
-                default: return state;
-            }
-        };
+            switch (action.type) {
+                case 'LOAD_TEAMS_FROM_FILE': {
+                    const { students, teams, teamCount, fixedStudentIds } = action.payload;
+                    const idMap = new Map();
+                    const formattedStudents = (students || []).map(s => {
+                        const originalFileId = s.id;
+                        const studentNumber = s.studentId !== undefined ? s.studentId : parseInt(String(originalFileId).replace('manual-', ''), 10);
+                        const newInternalId = `manual-${studentNumber}`;
+                        idMap.set(originalFileId, newInternalId);
+                        return { id: newInternalId, name: s.name, studentId: studentNumber };
+                    });
+    
+                    const formattedTeams = (teams || []).map(team => ({
+                        ...team,
+                        members: team.members.map(member => {
+                            const newInternalId = idMap.get(member.id);
+                            return formattedStudents.find(s => s.id === newInternalId) || member;
+                        })
+                    }));
+
+                    const formattedFixedIds = new Set(
+                        (Array.isArray(fixedStudentIds) ? fixedStudentIds : []).map(oldId => idMap.get(oldId)).filter(Boolean)
+                    );
+
+                    return {
+                        students: formattedStudents,
+                        teams: formattedTeams,
+                        teamCount: teamCount || 6,
+                        fixedStudentIds: formattedFixedIds,
+                    };
+                }
+                case 'LOAD_STUDENTS':
+                    return { ...state, teams:[], fixedStudentIds: new Set(), students: action.payload };
+                case 'RESET_TO_MANUAL': 
+                    return createInitialTeamState();
+                case 'SET_TEAM_COUNT':
+                    return { ...state, teamCount: action.payload };
+                case 'GENERATE_TEAMS': {
+                    const { students, teamCount, fixedStudentIds, teams: oldTeams } = state;
+                    if (students.length === 0 || teamCount < 1) return state;
+                    const newTeams = createTeamLayout(students, teamCount, fixedStudentIds, oldTeams);
+                    return { ...state, teams: newTeams };
+                }
+                case 'SORT_TEAMS': {
+                    const sortedTeams = state.teams.map(team => ({...team, members: [...team.members].sort((a, b) => a.studentId - b.studentId)}));
+                    return { ...state, teams: sortedTeams };
+                }
+                case 'TOGGLE_FIXED_STUDENT': {
+                    const studentId = action.payload;
+                    const newFixedIds = new Set(state.fixedStudentIds);
+                    newFixedIds.has(studentId) ? newFixedIds.delete(studentId) : newFixedIds.add(studentId);
+                    return { ...state, fixedStudentIds: newFixedIds };
+                }
+                case 'SWAP_STUDENTS': {
+                    const { studentAId, studentBId } = action.payload;
+                    if (!studentAId || !studentBId || studentAId === studentBId) return state;
+                    const newTeams = state.teams.map(team => ({ ...team, members: [...team.members] }));
+                    let studentAInfo = null, studentBInfo = null;
+                    newTeams.forEach(t => t.members.forEach((s, idx) => {
+                        if (s.id === studentAId) studentAInfo = { student: s, team: t, index: idx };
+                        if (s.id === studentBId) studentBInfo = { student: s, team: t, index: idx };
+                    }));
+                    if (studentAInfo && studentBInfo) {
+                        studentAInfo.team.members[studentAInfo.index] = studentBInfo.student;
+                        studentBInfo.team.members[studentBInfo.index] = studentAInfo.student;
+                    }
+                    return { ...state, teams: newTeams };
+                }
+                case 'UPDATE_STUDENT': {
+                    const { id, field, value } = action.payload;
+                    const updatedStudents = state.students.map(s => (s.id === id ? { ...s, [field]: value } : s));
+                    return { ...state, students: updatedStudents };
+                }
+                case 'ADD_STUDENT': {
+                    const existingIds = state.students.map(s => s.studentId);
+                    let newStudentId = 1;
+                    while(existingIds.includes(newStudentId)) { newStudentId++; }
+                    return { ...state, students: [...state.students, { id: `manual-${newStudentId}`, studentId: newStudentId, name: "새 학생" }]};
+                }
+                case 'DELETE_STUDENT': {
+                    const studentIdToDelete = action.payload;
+                    const newFixedIds = new Set(state.fixedStudentIds);
+                    newFixedIds.delete(studentIdToDelete);
+                    return {
+                        ...state,
+                        students: state.students.filter(s => s.id !== studentIdToDelete),
+                        teams: state.teams.map(team => ({ ...team, members: team.members.filter(s => s.id !== studentIdToDelete) })),
+                        fixedStudentIds: newFixedIds
+                    };
+                }
+                default: return state;
+            }
+        };
 
         const TeamBuilder = ({ students: propStudents, setModalState }) => {
             const [useClassData, setUseClassData] = useState(true);
@@ -1410,43 +1440,45 @@
             };
 
             const StudentListForTeamBuilder = () => {
-                const fileInputRef = useRef(null);
-                const [isComposing, setIsComposing] = useState(false);
-                
-                const saveDataToFile = () => {
-                    try {
-                        const dataToSave = { students: state.students.map(({name, studentId}) => ({id: studentId, name})) };
-                        const dataStr = JSON.stringify(dataToSave, null, 2);
-                        const blob = new Blob([dataStr], {type: "text/plain;charset=utf-8"});
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = '팀구성_학생명단.txt';
-                        link.href = url;
-                        link.click();
-                        URL.revokeObjectURL(url);
-                    } catch (error) { setModalState({isOpen: true, title: "오류", content: "데이터 저장에 실패했습니다."}); }
-                };
+                const fileInputRef = useRef(null);
+                const [isComposing, setIsComposing] = useState(false);
+                
+                const saveDataToFile = () => {
+                    try {
+                        // 학생 목록 뿐만 아니라 팀, 팀 개수 등 전체 상태를 저장
+                        const dataToSave = { 
+                            students: state.students, 
+                            teams: state.teams, 
+                            teamCount: state.teamCount, 
+                            fixedStudentIds: Array.from(state.fixedStudentIds) 
+                        };
+                        const dataStr = JSON.stringify(dataToSave, null, 2);
+                        const blob = new Blob([dataStr], {type: "text/plain;charset=utf-8"});
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = '팀구성_데이터.txt'; // 파일 이름 변경
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    } catch (error) { setModalState({isOpen: true, title: "오류", content: "데이터 저장에 실패했습니다."}); }
+                };
 
-                const loadDataFromFile = (event) => {
-                    const file = event.target.files[0];
-                    if (!file) { event.target.value = null; return; };
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const data = JSON.parse(e.target.result);
-                            if (data.students && Array.isArray(data.students)) {
-                                const formattedStudents = data.students.map(s => ({
-                                    id: `manual-${s.id}`, 
-                                    name: s.name, 
-                                    studentId: s.id 
-                                }));
-                                dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
-                            } else { setModalState({isOpen: true, title: "오류", content: "파일에 올바른 학생 명단 정보가 없습니다."}); }
-                        } catch (error) { setModalState({isOpen: true, title: "오류", content: "파일을 읽는 데 실패했습니다. 올바른 형식의 파일인지 확인해 주세요."});
-                        } finally { event.target.value = null; }
-                    };
-                    reader.readAsText(file);
-                };
+                const loadDataFromFile = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) { event.target.value = null; return; };
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const loadedData = JSON.parse(e.target.result);
+                            // 학생 목록이 있는지 확인 후 새로운 reducer 액션 호출
+                            if (loadedData.students && Array.isArray(loadedData.students)) {
+                                dispatch({ type: 'LOAD_TEAMS_FROM_FILE', payload: loadedData });
+                            } else { setModalState({isOpen: true, title: "오류", content: "파일에 올바른 팀 구성 정보가 없습니다."}); }
+                        } catch (error) { setModalState({isOpen: true, title: "오류", content: "파일을 읽는 데 실패했습니다. 올바른 데이터 파일인지 확인해 주세요."});
+                        } finally { event.target.value = null; }
+                    };
+                    reader.readAsText(file);
+                };
                 
                 const handleDelete = (studentId) => {
                     const student = state.students.find(s => s.id === studentId);
