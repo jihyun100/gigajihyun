@@ -973,7 +973,7 @@
                     )}
                     
                     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                        <h3 className="text-xl font-bold mb-4">전체 학생 검색 및 초대</h3>
+                        <h3 className="text-xl font-bold mb-4">전체 학생 검색 및 초대(서비스에 가입된 모든 학생을 검색해서 해당 학급에 초대할 수 있습니다.)</h3>
                         <div className="flex flex-col md:flex-row gap-2 mb-4">
                             <input type="text" placeholder="학번 또는 이름으로 검색" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="w-full p-2 border rounded-md"/>
                             <button onClick={handleSearch} disabled={isSearching} className="btn-sky !px-6 !py-2">{isSearching ? '검색 중...' : '검색'}</button>
