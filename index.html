@@ -191,9 +191,8 @@
                 <div className="bg-white p-8 rounded-lg shadow-md">
                     <h3 className="text-xl font-bold text-gray-700 mb-2">학생 정보 동기화 (관리자)</h3>
                     <p className="text-gray-500 mb-4">
-                        학생 정보가 담긴 Google Sheet URL과 동기화할 학년을 선택하세요. <br/>
-                        시트는 **A열: 학번, B열: 이름, C열: 학교 Google 계정** 순서로 구성되어야 합니다.
-                    </p>
+                        학생 정보가 담긴 Google Sheet URL과 동기화 할 학년을 선택하세요. </p>
+                    <p className="text-sm text-gray-500 mb-4">시트는 **A열: 학번, B열: 이름, C열: 학교 Google 계정** 순서로 구성되어야 합니다.</p>
                     <div className="grid md:grid-cols-3 gap-2 items-end">
                         <div className="md:col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Google Sheets URL</label>
@@ -870,12 +869,13 @@
                         <h3 className="text-xl font-bold mb-4">새 학급 추가</h3>
                         <form onSubmit={handleAddClass} className="flex flex-col md:flex-row gap-4 items-end">
                             <div className="flex-1 w-full"><label className="text-sm font-medium text-red-600">학급명 ('학년, 반' 숫자가 순서대로 들어가도록 설정하세요!! '시험 점수' 기능 구글시트 특정 탭 호출에 필요.)</label><input type="text" value={className} onChange={e => setClassName(e.target.value)} placeholder="예시: 2학년1반 기가, 1귀염둥이 3반, 체육3-2, 수학24 등 - '학년, 반' 숫자가 순서대로 들어가도록 지정" className="w-full mt-1 p-2 border rounded-md" /></div>
-                            <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급 코드 (6자리, 첫 글자는 영문)</label><input type="text" value={classCode} onChange={e => handleClassCodeChange(e.target.value)} maxLength={6} placeholder="예: A12345" className="w-full mt-1 p-2 border rounded-md" /></div>
+                            <div className="flex-1 w-full"><label className="text-sm font-medium text-gray-600">학급 코드 (6자리, 첫 글자는 영문) 추후 수정 불가함!</label><input type="text" value={classCode} onChange={e => handleClassCodeChange(e.target.value)} maxLength={6} placeholder="예: A12345" className="w-full mt-1 p-2 border rounded-md" /></div>
                             <button type="submit" className="btn-sky w-full md:w-auto !px-6 !py-2">추가</button>
                         </form>
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-md">
-                       <h3 className="text-xl font-bold mb-4">내 학급 목록</h3>
+                        <h3 className="text-xl font-bold mb-4">내 학급 목록</h3>
+                        <p className="text-sm text-gray-500 mb-4">내가 개설한 모든 학급의 이름과 학급코드가 표시됩니다.</p>
                         <div className="space-y-2">
                             {classes.map(c => (
                                 <div key={c.id} className="p-3 bg-gray-50 rounded-md flex justify-between items-center">
@@ -974,7 +974,7 @@
                     
                     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                         <h3 className="text-xl font-bold mb-1">전체 학생 검색 및 초대</h3>
-                        <p className="text-sm text-gray-500 mb-4">서비스에 가입된 모든 학생을 조회하여 해당 학급에 초대할 수 있습니다.</p>
+                        <p className="text-sm text-gray-500 mb-4">서비스에 가입된 전체 학생을 대상으로 검색하여, 해당 학급에 초대할 수 있습니다.</p>
                         <div className="flex flex-col md:flex-row gap-2 mb-4">
                             <input type="text" placeholder="학번 또는 이름으로 검색" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="w-full p-2 border rounded-md"/>
                             <button onClick={handleSearch} disabled={isSearching} className="btn-sky !px-6 !py-2">{isSearching ? '검색 중...' : '검색'}</button>
@@ -996,6 +996,7 @@
 
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h3 className="text-xl font-bold mb-4">학급 학생 목록</h3>
+                        <p className="text-sm text-gray-500 mb-4">현재 선택된 학급에 초대된 학생들의 명단입니다.</p>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left min-w-[600px]">
                                 <thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">작업</th></tr></thead>
@@ -1517,7 +1518,11 @@
                             <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
                         </div>
                     </div>
-                    
+                    <div className="text-sm text-gray-600 bg-slate-100 p-4 rounded-lg mb-6 border">
+                        <p className="mb-1">• 페이지 맨 하단 '학생 명단 관리'에서 데이터 입력 후, 팀 나누기.</p>
+                        <p className="mb-1">• 팀 배정 완료 후에도, 드롭다운 버튼을 통해 두 학생 간 팀 교환 가능.</p>
+                        <p>• ☑️클릭 시 👑로 변경: 해당 학생을 팀 내에 고정한 상태로 랜덤 배정 실시. (+팀 리더 표시 기능)</p>
+                    </div>
                     <div className="bg-white p-4 rounded-xl shadow-md mb-8">
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <div className="flex items-center gap-2">
