@@ -1558,7 +1558,7 @@
         };
 
         // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // ★★★★★           랜덤 자리배치 컴포넌트 시작           ★★★★★
+        // ★★★★★       랜덤 자리배치 컴포넌트 시작       ★★★★★
         // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         const createInitialSeatingState = () => ({
             students: Array.from({ length: 28 }, (_, i) => ({ id: `manual-${i + 1}`, name: `학생 ${i + 1}`, studentId: i + 1 })),
@@ -1734,7 +1734,7 @@
                         dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
                     }
                 }
-            };         
+            };       
             
             const allSeatIds = useMemo(() => {
                 const ids = [];
@@ -1858,7 +1858,7 @@
                                                         }}
                                                         onChange={(e) => handleNameChange(student.id, e.target.value)}
                                                     />
-                                                </td>                                    
+                                                </td>                                       
                                                 <td className="px-2 py-0.5 text-center"><button onClick={() => handleDelete(student.id)} className="text-red-500 hover:text-red-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /> </svg></button></td>
                                             </tr>))}
                                         </tbody>
@@ -1884,67 +1884,79 @@
                             <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
                         </div>
                     </div>
-                    
-                    <div className="flex flex-col gap-6">
-                        <main id="seatingChartArea" className="bg-white p-2 sm:p-4 rounded-xl shadow-md">
-                            <div className="overflow-x-auto pb-2">
-                                <div className="bg-white min-w-max mx-auto">
-                                    <div className="flex justify-center items-start gap-4 sm:gap-8 md:gap-12 p-4">
-                                        {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
-                                            <div key={key} className="flex flex-col items-center">
-                                                <div className={`mb-2 text-base font-semibold text-gray-600 ${isScreenshotMode ? 'invisible' : ''}`}>{name}</div>
-                                                <div className="grid gap-3" style={{ gridTemplateRows: `repeat(${rows}, 1fr)`, gridTemplateColumns: `repeat(${cols}, minmax(130px, 1fr))` }}>
-                                                    {Array.from({ length: rows * cols }).map((_, i) => {
-                                                        const r = Math.floor(i / cols); const c = i % cols;
-                                                        const seatId = `${key.charAt(0).toUpperCase()}-${r + 1}-${c + 1}`;
-                                                        const student = state.students.find(s=>s.id === state.seatAssignments[seatId]);
-                                                        return (<div key={seatId} className={`relative w-full h-24 border rounded-lg shadow-sm flex flex-col items-center justify-center transition-colors ${(state.fixedSeats.has(seatId) && !isScreenshotMode) ? 'bg-rose-200 border-rose-400' : 'bg-white'}`}>
-                                                            {!isScreenshotMode && <div className="absolute top-1.5 left-2.5 text-xs text-gray-400 font-mono">{seatId}</div>}
-                                                            {!isScreenshotMode && <button onClick={() => dispatch({type: 'TOGGLE_FIX_SEAT', payload: {seatId, showModal: (msg) => setModalState({isOpen: true, title: "알림", content: msg}) }})} title="고정/해제" className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full border transition-all ${state.fixedSeats.has(seatId) ? 'bg-rose-500 border-rose-700' : 'bg-gray-300 hover:bg-gray-400 border-gray-400'}`}><span className="text-white text-sm">{state.fixedSeats.has(seatId) ? '🔒' : '🔓'}</span></button>}
-                                                            {student && <div className="text-gray-800 flex flex-col items-center justify-center text-center -mt-3"><div className="font-bold text-lg">{student.name}</div><div className="text-base text-gray-500">({student.studentId}번)</div></div>}
-                                                            {!isScreenshotMode && <div className="absolute bottom-1.5 w-full px-2"><select value={state.seatAssignments[seatId] || ''} onChange={(e) => dispatch({type: 'SET_SEAT_ASSIGNMENT', payload: {seatId, studentIdStr: e.target.value }})} className="w-full text-sm border-gray-300 rounded p-1"><option value="">--</option>{state.students.sort((a,b) => a.studentId - b.studentId).map(s => (<option key={s.id} value={s.id}>{s.studentId}. {s.name}</option>))}</select></div>}
-                                                        </div>);
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="w-full flex justify-center mt-2 pb-4"><h3 className="w-full max-w-md text-center font-bold text-xl p-2 bg-slate-200 text-slate-500 rounded-md">교탁</h3></div>
-                                </div>
-                            </div>
-                        </main>
-                        
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="bg-white p-4 rounded-xl shadow-md lg:col-span-1">
-                                <h3 className="text-lg font-bold mb-3">실행</h3>
-                                <div className="flex flex-col gap-2">
-                                    <button onClick={handleRandomize} className="btn-green w-full">🪄 자리 섞기!</button>
-                                    <button onClick={handleSaveAsImage} className="btn-sky w-full">🖼️ 이미지로 저장</button>
-                                </div>
-                            </div>
         
-                            {!useClassData &&
-                                <div className="bg-white p-4 rounded-xl shadow-md lg:col-span-2">
-                                    <h2 className="text-lg font-semibold mb-2 border-b pb-2">배치 설정</h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
-                                            <div key={key} className="p-2 bg-slate-50 rounded-lg border">
-                                                <h3 className="font-bold text-base text-slate-700 mb-2">{name}</h3>
-                                                <div className="flex items-center gap-2">
-                                                    <label className="text-xs font-medium w-8">행:</label>
-                                                    <input type="number" value={rows} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} className="w-full p-1 border rounded-md"/>
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-2">
-                                                    <label className="text-xs font-medium w-8">열:</label>
-                                                    <input type="number" value={cols} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} className="w-full p-1 border rounded-md"/>
-                                                </div>
+                    {/* --- 컨트롤 패널 영역 --- */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        {/* 배치 설정 */}
+                        <div className="bg-white p-4 rounded-xl shadow-md lg:col-span-2">
+                            <div className="grid grid-cols-3 gap-4">
+                                {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
+                                    <div key={key} className="text-center">
+                                        <span className="font-bold text-base text-slate-700">{name}</span>
+                                        <div className="flex items-center justify-center gap-x-3 gap-y-2 mt-2 flex-wrap">
+                                            <div className="flex items-center gap-1">
+                                                <label className="text-sm font-medium">행:</label>
+                                                <input 
+                                                    type="number" 
+                                                    value={rows} 
+                                                    onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} 
+                                                    className="w-16 p-1 border rounded-md text-center"
+                                                />
                                             </div>
-                                        ))}
+                                            <div className="flex items-center gap-1">
+                                                <label className="text-sm font-medium">열:</label>
+                                                <input 
+                                                    type="number" 
+                                                    value={cols} 
+                                                    onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} 
+                                                    className="w-16 p-1 border rounded-md text-center"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            }
+                                ))}
+                            </div>
+                            <div className="text-center text-xs text-gray-500 mt-3 space-y-1">
+                                <p>🔒자물쇠로 고정석 지정 가능. (홀수 빈 좌석에 활용)</p>
+                                <p>자리 섞기 완료 후에도, 좌석 별 드롭다운 버튼을 통해 두 학생 간 좌석 위치 교환 가능.</p>
+                            </div>
+                        </div>
+
+                        {/* 실행 버튼 */}
+                        <div className="bg-white p-4 rounded-xl shadow-md flex flex-col items-center justify-center gap-4 lg:col-span-1">
+                            <button onClick={handleRandomize} className="btn-green w-full">🪄 자리 섞기!</button>
+                            <button onClick={handleSaveAsImage} className="btn-sky w-full">🖼️ 이미지로 저장</button>
                         </div>
                     </div>
+        
+                    {/* --- 자리 배치표 영역 --- */}
+                    <main id="seatingChartArea" className="bg-white p-2 sm:p-4 rounded-xl shadow-md">
+                        <div className="overflow-x-auto pb-2">
+                            <div className="bg-white min-w-max mx-auto">
+                                <div className="flex justify-center items-start gap-4 sm:gap-8 md:gap-12 p-4">
+                                    {Object.entries(state.sections).map(([key, { name, rows, cols }]) => (
+                                        <div key={key} className="flex flex-col items-center">
+                                            <div className={`mb-2 text-base font-semibold text-gray-600 ${isScreenshotMode ? 'invisible' : ''}`}>{name}</div>
+                                            <div className="grid gap-3" style={{ gridTemplateRows: `repeat(${rows}, 1fr)`, gridTemplateColumns: `repeat(${cols}, minmax(130px, 1fr))` }}>
+                                                {Array.from({ length: rows * cols }).map((_, i) => {
+                                                    const r = Math.floor(i / cols); const c = i % cols;
+                                                    const seatId = `${key.charAt(0).toUpperCase()}-${r + 1}-${c + 1}`;
+                                                    const student = state.students.find(s=>s.id === state.seatAssignments[seatId]);
+                                                    return (<div key={seatId} className={`relative w-full h-24 border rounded-lg shadow-sm flex flex-col items-center justify-center transition-colors ${(state.fixedSeats.has(seatId) && !isScreenshotMode) ? 'bg-rose-200 border-rose-400' : 'bg-white'}`}>
+                                                        {!isScreenshotMode && <div className="absolute top-1.5 left-2.5 text-xs text-gray-400 font-mono">{seatId}</div>}
+                                                        {!isScreenshotMode && <button onClick={() => dispatch({type: 'TOGGLE_FIX_SEAT', payload: {seatId, showModal: (msg) => setModalState({isOpen: true, title: "알림", content: msg}) }})} title="고정/해제" className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full border transition-all ${state.fixedSeats.has(seatId) ? 'bg-rose-500 border-rose-700' : 'bg-gray-300 hover:bg-gray-400 border-gray-400'}`}><span className="text-white text-sm">{state.fixedSeats.has(seatId) ? '🔒' : '🔓'}</span></button>}
+                                                        {student && <div className="text-gray-800 flex flex-col items-center justify-center text-center -mt-3"><div className="font-bold text-lg">{student.name}</div><div className="text-base text-gray-500">({student.studentId}번)</div></div>}
+                                                        {!isScreenshotMode && <div className="absolute bottom-1.5 w-full px-2"><select value={state.seatAssignments[seatId] || ''} onChange={(e) => dispatch({type: 'SET_SEAT_ASSIGNMENT', payload: {seatId, studentIdStr: e.target.value }})} className="w-full text-sm border-gray-300 rounded p-1"><option value="">--</option>{state.students.sort((a,b) => a.studentId - b.studentId).map(s => (<option key={s.id} value={s.id}>{s.studentId}. {s.name}</option>))}</select></div>}
+                                                    </div>);
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="w-full flex justify-center mt-2 pb-4"><h3 className="w-full max-w-md text-center font-bold text-xl p-2 bg-slate-200 text-slate-500 rounded-md">교탁</h3></div>
+                            </div>
+                        </div>
+                    </main>
                     
                     {!useClassData && <ManualSeatEditor />}
                 </div>
