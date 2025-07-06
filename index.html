@@ -70,7 +70,7 @@
 
         // --- 공용 컴포넌트 ---
         const Modal = ({ modalState, setModalState }) => {
-            const { isOpen, title, content, isConfirm, onConfirm, confirmText = '확인', cancelText = '취소', size = 'max-w-lg' } = modalState;
+            const { isOpen, title, content, isConfirm, onConfirm, confirmText = '확인', cancelText = '취소', size = 'max-w-lg', confirmButtonClass = 'btn-sky' } = modalState;
             if (!isOpen) return null;
             
             const handleClose = () => setModalState({ isOpen: false });
@@ -87,10 +87,10 @@
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[100]" onClick={handleClose}>
                     <div className={`bg-white rounded-2xl shadow-xl p-6 sm:p-8 w-full m-4 ${size}`} onClick={e => e.stopPropagation()}>
                         {title && <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">{title}</h3>}
-                        <div className="text-gray-600">{content}</div>
+                        <div className="text-gray-600 text-center">{content}</div>
                         <div className={`flex gap-4 mt-6 ${isConfirm ? 'justify-end' : 'justify-center'}`}>
                             {isConfirm && (<button onClick={handleClose} className="btn-gray">{cancelText}</button>)}
-                            <button onClick={handleConfirm} className="btn-sky">{confirmText}</button>
+                            <button onClick={handleConfirm} className={confirmButtonClass}>{confirmText}</button>
                         </div>
                     </div>
                 </div>
@@ -1298,133 +1298,184 @@
             );
         };
 
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // ★★★★★           랜덤 팀 구성 컴포넌트 시작           ★★★★★
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★★★       랜덤 팀 구성 컴포넌트 시작       ★★★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
-        const createTeamLayout = (_0x25a3d4,_0x42969f,_0x1f0e8a,_0x4f7f63)=>{var _0x573e04=["\x6D\x65\x6D\x62\x65\x72\x73","\x6C\x65\x6E\x67\x74\x68","\x72\x65\x64\x75\x63\x65","\x70\x75\x73\x68","\x69\x64","\x73\x6F\x72\x74","\x66\x6F\x72\x45\x61\x63\x68","\x66\x69\x6C\x74\x65\x72","\x68\x61\x73","\x75\x6E\x73\x68\x69\x66\x74","\x72\x61\x6E\x64\x6F\x6D","\x66\x72\x6F\x6D","\x66\x69\x6E\x64","\x73\x6F\x6D\x65"];const _0x1a8f9c=_0x25a3d4[_0x573e04[7]](_0x2c6a46=>_0x1f0e8a[_0x573e04[8]](_0x2c6a46[_0x573e04[4]])),_0x253b9a=_0x25a3d4[_0x573e04[7]](_0x33b934=>!_0x1f0e8a[_0x573e04[8]](_0x33b934[_0x573e04[4]])),_0x4b78c4=[..._0x253b9a][_0x573e04[5]](()=>Math[_0x573e04[10]]()-0.5),_0x15392e=Array[_0x573e04[11]]({length:_0x42969f},(_0x1b41c3,_0x4d16fe)=>({id:_0x4d16fe,members:[]}));return _0x1a8f9c[_0x573e04[6]](_0x3e4509=>{const _0x5bf5c0=_0x4f7f63[_0x573e04[12]](_0x2a3e0f=>_0x2a3e0f[_0x573e04[0]][_0x573e04[13]](_0x599f57=>_0x599f57[_0x573e04[4]]===_0x3e4509[_0x573e04[4]]));_0x5bf5c0&&_0x5bf5c0[_0x573e04[4]]<_0x42969f?_0x15392e[_0x5bf5c0[_0x573e04[4]]][_0x573e04[0]][_0x573e04[3]](_0x3e4509):_0x4b78c4[_0x573e04[9]](_0x3e4509)}),_0x4b78c4[_0x573e04[6]](_0x280e2f=>{const _0x597f8c=_0x15392e[_0x573e04[2]]((_0x26c04e,_0x247547)=>_0x26c04e[_0x573e04[0]][_0x573e04[1]]<=_0x247547[_0x573e04[0]][_0x573e04[1]]?_0x26c04e:_0x247547);_0x597f8c[_0x573e04[0]][_0x573e04[3]](_0x280e2f)}),_0x15392e[_0x573e04[6]](_0x303bb2=>_0x303bb2[_0x573e04[0]][_0x573e04[5]]((_0x111649,_0x3f9e8a)=>_0x111649.studentId - _0x3f9e8a.studentId)),_0x15392e};
-            
-        const createInitialTeamState = () => ({
-            students: Array.from({ length: 28 }, (_, i) => ({ id: `manual-${i + 1}`, name: `학생 ${i + 1}`, studentId: i + 1 })),
-            teams: [],
-            teamCount: 6,
-            fixedStudentIds: new Set(),
-        });
+        const createTeamLayout = (_0x25a3d4,_0x42969f,_0x1f0e8a,_0x4f7f63)=>{var _0x573e04=["\x6D\x65\x6D\x62\x65\x72\x73","\x6C\x65\x6E\x67\x74\x68","\x72\x65\x64\x75\x63\x65","\x70\x75\x73\x68","\x69\x64","\x73\x6F\x72\x74","\x66\x6F\x72\x45\x61\x63\x68","\x66\x69\x6C\x74\x65\x72","\x68\x61\x73","\x75\x6E\x73\x68\x69\x66\x74","\x72\x61\x6E\x64\x6F\x6D","\x66\x72\x6F\x6D","\x66\x69\x6E\x64","\x73\x6F\x6D\x65"];const _0x1a8f9c=_0x25a3d4[_0x573e04[7]](_0x2c6a46=>_0x1f0e8a[_0x573e04[8]](_0x2c6a46[_0x573e04[4]])),_0x253b9a=_0x25a3d4[_0x573e04[7]](_0x33b934=>!_0x1f0e8a[_0x573e04[8]](_0x33b934[_0x573e04[4]])),_0x4b78c4=[..._0x253b9a][_0x573e04[5]](()=>Math[_0x573e04[10]]()-0.5),_0x15392e=Array[_0x573e04[11]]({length:_0x42969f},(_0x1b41c3,_0x4d16fe)=>({id:_0x4d16fe,members:[]}));return _0x1a8f9c[_0x573e04[6]](_0x3e4509=>{const _0x5bf5c0=_0x4f7f63[_0x573e04[12]](_0x2a3e0f=>_0x2a3e0f[_0x573e04[0]][_0x573e04[13]](_0x599f57=>_0x599f57[_0x573e04[4]]===_0x3e4509[_0x573e04[4]]));_0x5bf5c0&&_0x5bf5c0[_0x573e04[4]]<_0x42969f?_0x15392e[_0x5bf5c0[_0x573e04[4]]][_0x573e04[0]][_0x573e04[3]](_0x3e4509):_0x4b78c4[_0x573e04[9]](_0x3e4509)}),_0x4b78c4[_0x573e04[6]](_0x280e2f=>{const _0x597f8c=_0x15392e[_0x573e04[2]]((_0x26c04e,_0x247547)=>_0x26c04e[_0x573e04[0]][_0x573e04[1]]<=_0x247547[_0x573e04[0]][_0x573e04[1]]?_0x26c04e:_0x247547);_0x597f8c[_0x573e04[0]][_0x573e04[3]](_0x280e2f)}),_0x15392e[_0x573e04[6]](_0x303bb2=>_0x303bb2[_0x573e04[0]][_0x573e04[5]]((_0x111649,_0x3f9e8a)=>_0x111649.studentId - _0x3f9e8a.studentId)),_0x15392e};
+            
+        const createInitialTeamState = () => ({
+            students: Array.from({ length: 28 }, (_, i) => ({ id: `manual-${i + 1}`, name: `학생 ${i + 1}`, studentId: i + 1 })),
+            teams: [],
+            teamCount: 6,
+            fixedStudentIds: new Set(),
+        });
 
         const teamReducer = (state, action) => {
-            switch (action.type) {
-                case 'LOAD_TEAMS_FROM_FILE': {
-                    const { students, teams, teamCount, fixedStudentIds } = action.payload;
-                    const idMap = new Map();
-                    const formattedStudents = (students || []).map(s => {
-                        const originalFileId = s.id;
-                        const studentNumber = s.studentId !== undefined ? s.studentId : parseInt(String(originalFileId).replace('manual-', ''), 10);
-                        const newInternalId = `manual-${studentNumber}`;
-                        idMap.set(originalFileId, newInternalId);
-                        return { id: newInternalId, name: s.name, studentId: studentNumber };
-                    });
-    
-                    const formattedTeams = (teams || []).map(team => ({
-                        ...team,
-                        members: team.members.map(member => {
-                            const newInternalId = idMap.get(member.id);
-                            return formattedStudents.find(s => s.id === newInternalId) || member;
-                        })
-                    }));
+            switch (action.type) {
+                case 'LOAD_STATE': {
+                    const { students = [], teams = [], teamCount, fixedStudentIds = [] } = action.payload;
+                    const idMap = new Map();
+                    const formattedStudents = students.map(s => {
+                        const originalId = s.id;
+                        const studentNumber = s.studentId !== undefined ? s.studentId : parseInt(String(originalId).replace('manual-', ''), 10);
+                        const newInternalId = `manual-${studentNumber}`;
+                        idMap.set(originalId, newInternalId);
+                        return { ...s, id: newInternalId, studentId: studentNumber };
+                    });
+                    const formattedTeams = (teams || []).map(team => ({
+                        ...team,
+                        members: team.members.map(member => formattedStudents.find(s => s.id === idMap.get(member.id)) || member),
+                    }));
+                    const formattedFixedIds = new Set((Array.isArray(fixedStudentIds) ? fixedStudentIds : []).map(id => idMap.get(id)).filter(Boolean));
+                    return { ...state, students: formattedStudents, teams: formattedTeams, teamCount: teamCount || state.teamCount, fixedStudentIds: formattedFixedIds };
+                }
+                case 'RESET_TO_MANUAL': return createInitialTeamState();
+                case 'SET_TEAM_COUNT': return { ...state, teamCount: action.payload };
+                case 'GENERATE_TEAMS': {
+                    const { students, teamCount, fixedStudentIds, teams: oldTeams } = state;
+                    if (students.length === 0 || teamCount < 1) return state;
+                    const createTeamLayout_func = (_0x25a3d4,_0x42969f,_0x1f0e8a,_0x4f7f63)=>{var _0x573e04=["\x6D\x65\x6D\x62\x65\x72\x73","\x6C\x65\x6E\x67\x74\x68","\x72\x65\x64\x75\x63\x65","\x70\x75\x73\x68","\x69\x64","\x73\x6F\x72\x74","\x66\x6F\x72\x45\x61\x63\x68","\x66\x69\x6C\x74\x65\x72","\x68\x61\x73","\x75\x6E\x73\x68\x69\x66\x74","\x72\x61\x6E\x64\x6F\x6D","\x66\x72\x6F\x6D","\x66\x69\x6E\x64","\x73\x6F\x6D\x65"];const _0x1a8f9c=_0x25a3d4[_0x573e04[7]](_0x2c6a46=>_0x1f0e8a[_0x573e04[8]](_0x2c6a46[_0x573e04[4]])),_0x253b9a=_0x25a3d4[_0x573e04[7]](_0x33b934=>!_0x1f0e8a[_0x573e04[8]](_0x33b934[_0x573e04[4]])),_0x4b78c4=[..._0x253b9a][_0x573e04[5]](()=>Math[_0x573e04[10]]()-0.5),_0x15392e=Array[_0x573e04[11]]({length:_0x42969f},(_0x1b41c3,_0x4d16fe)=>({id:_0x4d16fe,members:[]}));return _0x1a8f9c[_0x573e04[6]](_0x3e4509=>{const _0x5bf5c0=_0x4f7f63[_0x573e04[12]](_0x2a3e0f=>_0x2a3e0f[_0x573e04[0]][_0x573e04[13]](_0x599f57=>_0x599f57[_0x573e04[4]]===_0x3e4509[_0x573e04[4]]));_0x5bf5c0&&_0x5bf5c0[_0x573e04[4]]<_0x42969f?_0x15392e[_0x5bf5c0[_0x573e04[4]]][_0x573e04[0]][_0x573e04[3]](_0x3e4509):_0x4b78c4[_0x573e04[9]](_0x3e4509)}),_0x4b78c4[_0x573e04[6]](_0x280e2f=>{const _0x597f8c=_0x15392e[_0x573e04[2]]((_0x26c04e,_0x247547)=>_0x26c04e[_0x573e04[0]][_0x573e04[1]]<=_0x247547[_0x573e04[0]][_0x573e04[1]]?_0x26c04e:_0x247547);_0x597f8c[_0x573e04[0]][_0x573e04[3]](_0x280e2f)}),_0x15392e[_0x573e04[6]](_0x303bb2=>_0x303bb2[_0x573e04[0]][_0x573e04[5]]((_0x111649,_0x3f9e8a)=>_0x111649.studentId - _0x3f9e8a.studentId)),_0x15392e};
+                    const newTeams = createTeamLayout_func(students, teamCount, fixedStudentIds, oldTeams);
+                    return { ...state, teams: newTeams };
+                }
+                case 'SORT_TEAMS': {
+                    const sortedTeams = state.teams.map(team => ({...team, members: [...team.members].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId)))}));
+                    return { ...state, teams: sortedTeams };
+                }
+                case 'TOGGLE_FIXED_STUDENT': {
+                    const studentId = action.payload;
+                    const newFixedIds = new Set(state.fixedStudentIds);
+                    newFixedIds.has(studentId) ? newFixedIds.delete(studentId) : newFixedIds.add(studentId);
+                    return { ...state, fixedStudentIds: newFixedIds };
+                }
+                case 'SWAP_STUDENTS': {
+                    const { studentAId, studentBId } = action.payload;
+                    if (!studentAId || !studentBId || studentAId === studentBId) return state;
+                    const newTeams = state.teams.map(team => ({ ...team, members: [...team.members] }));
+                    let studentAInfo = null, studentBInfo = null;
+                    newTeams.forEach(t => t.members.forEach((s, idx) => {
+                        if (s.id === studentAId) studentAInfo = { student: s, team: t, index: idx };
+                        if (s.id === studentBId) studentBInfo = { student: s, team: t, index: idx };
+                    }));
+                    if (studentAInfo && studentBInfo) {
+                        studentAInfo.team.members[studentAInfo.index] = studentBInfo.student;
+                        studentBInfo.team.members[studentBInfo.index] = studentAInfo.student;
+                    }
+                    return { ...state, teams: newTeams };
+                }
+                case 'UPDATE_STUDENT': {
+                    const { id, field, value } = action.payload;
+                    const updatedStudents = state.students.map(s => (s.id === id ? { ...s, [field]: value } : s));
+                    return { ...state, students: updatedStudents };
+                }
+                case 'ADD_STUDENT': {
+                    const existingIds = state.students.map(s => s.studentId);
+                    let newStudentId = 1;
+                    while(existingIds.includes(newStudentId)) { newStudentId++; }
+                    return { ...state, students: [...state.students, { id: `manual-${newStudentId}`, studentId: newStudentId, name: "새 학생" }]};
+                }
+                case 'DELETE_STUDENT': {
+                    const studentIdToDelete = action.payload;
+                    const newFixedIds = new Set(state.fixedStudentIds);
+                    newFixedIds.delete(studentIdToDelete);
+                    return {
+                        ...state,
+                        students: state.students.filter(s => s.id !== studentIdToDelete),
+                        teams: state.teams.map(team => ({ ...team, members: team.members.filter(s => s.id !== studentIdToDelete) })),
+                        fixedStudentIds: newFixedIds
+                    };
+                }
+                default: return state;
+            }
+        };
+        
+        const StudentTeamView = ({ selectedClass }) => {
+            const [teamComposition, setTeamComposition] = useState(null);
+            const [loading, setLoading] = useState(true);
 
-                    const formattedFixedIds = new Set(
-                        (Array.isArray(fixedStudentIds) ? fixedStudentIds : []).map(oldId => idMap.get(oldId)).filter(Boolean)
-                    );
+            useEffect(() => {
+                if (!selectedClass?.id) {
+                    setLoading(false);
+                    return;
+                }
+                const unsub = db.collection('classes').doc(selectedClass.id).onSnapshot(doc => {
+                    if (doc.exists && doc.data().teamComposition) {
+                        setTeamComposition(doc.data().teamComposition);
+                    } else {
+                        setTeamComposition(null);
+                    }
+                    setLoading(false);
+                });
+                return () => unsub();
+            }, [selectedClass]);
 
-                    return {
-                        students: formattedStudents,
-                        teams: formattedTeams,
-                        teamCount: teamCount || 6,
-                        fixedStudentIds: formattedFixedIds,
-                    };
-                }
-                case 'LOAD_STUDENTS':
-                    return { ...state, teams:[], fixedStudentIds: new Set(), students: action.payload };
-                case 'RESET_TO_MANUAL': 
-                    return createInitialTeamState();
-                case 'SET_TEAM_COUNT':
-                    return { ...state, teamCount: action.payload };
-                case 'GENERATE_TEAMS': {
-                    const { students, teamCount, fixedStudentIds, teams: oldTeams } = state;
-                    if (students.length === 0 || teamCount < 1) return state;
-                    const newTeams = createTeamLayout(students, teamCount, fixedStudentIds, oldTeams);
-                    return { ...state, teams: newTeams };
-                }
-                case 'SORT_TEAMS': {
-                    const sortedTeams = state.teams.map(team => ({...team, members: [...team.members].sort((a, b) => a.studentId - b.studentId)}));
-                    return { ...state, teams: sortedTeams };
-                }
-                case 'TOGGLE_FIXED_STUDENT': {
-                    const studentId = action.payload;
-                    const newFixedIds = new Set(state.fixedStudentIds);
-                    newFixedIds.has(studentId) ? newFixedIds.delete(studentId) : newFixedIds.add(studentId);
-                    return { ...state, fixedStudentIds: newFixedIds };
-                }
-                case 'SWAP_STUDENTS': {
-                    const { studentAId, studentBId } = action.payload;
-                    if (!studentAId || !studentBId || studentAId === studentBId) return state;
-                    const newTeams = state.teams.map(team => ({ ...team, members: [...team.members] }));
-                    let studentAInfo = null, studentBInfo = null;
-                    newTeams.forEach(t => t.members.forEach((s, idx) => {
-                        if (s.id === studentAId) studentAInfo = { student: s, team: t, index: idx };
-                        if (s.id === studentBId) studentBInfo = { student: s, team: t, index: idx };
-                    }));
-                    if (studentAInfo && studentBInfo) {
-                        studentAInfo.team.members[studentAInfo.index] = studentBInfo.student;
-                        studentBInfo.team.members[studentBInfo.index] = studentAInfo.student;
-                    }
-                    return { ...state, teams: newTeams };
-                }
-                case 'UPDATE_STUDENT': {
-                    const { id, field, value } = action.payload;
-                    const updatedStudents = state.students.map(s => (s.id === id ? { ...s, [field]: value } : s));
-                    return { ...state, students: updatedStudents };
-                }
-                case 'ADD_STUDENT': {
-                    const existingIds = state.students.map(s => s.studentId);
-                    let newStudentId = 1;
-                    while(existingIds.includes(newStudentId)) { newStudentId++; }
-                    return { ...state, students: [...state.students, { id: `manual-${newStudentId}`, studentId: newStudentId, name: "새 학생" }]};
-                }
-                case 'DELETE_STUDENT': {
-                    const studentIdToDelete = action.payload;
-                    const newFixedIds = new Set(state.fixedStudentIds);
-                    newFixedIds.delete(studentIdToDelete);
-                    return {
-                        ...state,
-                        students: state.students.filter(s => s.id !== studentIdToDelete),
-                        teams: state.teams.map(team => ({ ...team, members: team.members.filter(s => s.id !== studentIdToDelete) })),
-                        fixedStudentIds: newFixedIds
-                    };
-                }
-                default: return state;
-            }
-        };
+            if (loading) {
+                return <div className="h-64 w-full skeleton"></div>;
+            }
 
-        const TeamBuilder = ({ students: propStudents, setModalState }) => {
+            if (!teamComposition || !teamComposition.teams || teamComposition.teams.length === 0) {
+                return (
+                    <div className="text-center text-gray-500 p-10 bg-white rounded-lg shadow-md">
+                        <p className="text-xl font-bold">아직 선생님이 공유한 팀이 없습니다.</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div>
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6">📢 나의 팀 구성</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {teamComposition.teams.map((team, index) => (
+                            <div key={team.id} className="bg-white p-4 rounded-xl border shadow-md">
+                                <h3 className="font-bold text-xl text-sky-700 mb-3 text-center pb-2 border-b">{index + 1}팀 ({team.members.length}명)</h3>
+                                <ul className="space-y-2">
+                                    {team.members.sort((a,b) => a.studentId - b.studentId).map(student => (
+                                        <li key={student.id} className="text-center font-medium text-lg p-2 bg-slate-50 rounded-md">
+                                            {(teamComposition.fixedStudentIds || []).includes(student.id) && '👑 '}{student.name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const TeamBuilder = ({ propStudents, selectedClass, setModalState }) => {
             const [useClassData, setUseClassData] = useState(true);
             const [state, dispatch] = useReducer(teamReducer, undefined, createInitialTeamState);
 
             useEffect(() => {
-                if (useClassData && propStudents) {
-                    const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
-                    dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
+                if (useClassData) {
+                    if (propStudents && propStudents.length > 0) {
+                        const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
+                        dispatch({ type: 'LOAD_STATE', payload: { students: formattedStudents } });
+                    }
                 }
             }, [propStudents, useClassData]);
+
+            useEffect(() => {
+                if (!selectedClass?.id || !useClassData) return;
+
+                const unsub = db.collection('classes').doc(selectedClass.id).onSnapshot(doc => {
+                    if (doc.exists && doc.data().teamComposition) {
+                        dispatch({ type: 'LOAD_STATE', payload: doc.data().teamComposition });
+                    } else {
+                        const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
+                        dispatch({ type: 'LOAD_STATE', payload: { students: formattedStudents, teams: [], fixedStudentIds: [] } });
+                    }
+                });
+
+                return () => unsub();
+            }, [propStudents, selectedClass, useClassData]);
 
             const handleModeChange = (e) => {
                 const isFileMode = e.target.checked;
                 setUseClassData(!isFileMode);
                 if (isFileMode) {
                     dispatch({ type: 'RESET_TO_MANUAL' });
-                } else {
-                    const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
-                    dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
                 }
             };
             
@@ -1439,46 +1490,107 @@
                 }
             };
 
+            const handleSaveTeams = async () => {
+                if (!selectedClass?.id) {
+                    setModalState({ isOpen: true, title: "오류", content: "학급이 선택되지 않았습니다." });
+                    return;
+                }
+                const dataToSave = {
+                    students: state.students,
+                    teams: state.teams,
+                    teamCount: state.teamCount,
+                    fixedStudentIds: Array.from(state.fixedStudentIds),
+                    savedAt: new Date().toISOString(),
+                };
+                await db.collection('classes').doc(selectedClass.id).update({ teamComposition: dataToSave });
+                setModalState({ isOpen: true, title: "성공", content: "현재 팀 구성이 저장되어 학생들에게 공유됩니다."});
+            };
+
+            const handleResetTeams = () => {
+                 if (!selectedClass?.id) return;
+                 setModalState({
+                    isOpen: true,
+                    isConfirm: true,
+                    title: "⚠️ 저장된 결과 초기화",
+                    content: (
+                        <div className="text-center">
+                            <p className="text-lg font-semibold text-gray-700">정말로 저장된 팀 구성을 삭제하시겠습니까?</p>
+                            <p className="text-gray-500 mt-2"> 학생들에게 공유된 팀 정보가 모두 사라집니다.</p>
+                        </div>
+                    ),
+                    confirmText: "삭제",
+                    confirmButtonClass: 'btn-red',
+                    onConfirm: async () => {
+                        await db.collection('classes').doc(selectedClass.id).update({
+                            teamComposition: FieldValue.delete()
+                        });
+                        dispatch({ type: 'LOAD_STATE', payload: { ...state, teams: [], fixedStudentIds: [] } });
+                        return true;
+                    }
+                 });
+            };
+
+            const handleExcelDownload = () => {
+                if (state.teams.length === 0) {
+                    setModalState({ isOpen: true, title: "알림", content: "다운로드할 팀 구성이 없습니다." });
+                    return;
+                }
+                const headers = state.teams.map((team, index) => `${index + 1}팀`);
+                const maxTeamSize = Math.max(...state.teams.map(team => team.members.length));
+                const dataRows = [];
+                for (let i = 0; i < maxTeamSize; i++) {
+                    const row = [];
+                    state.teams.forEach(team => {
+                        const member = team.members[i];
+                        row.push(member ? `${member.studentId}. ${member.name}` : "");
+                    });
+                    dataRows.push(row);
+                }
+                const excelData = [headers, ...dataRows];
+                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "팀 배정 결과");
+                XLSX.writeFile(workbook, "팀_배정_결과.xlsx");
+            };
+
             const StudentListForTeamBuilder = () => {
-                const fileInputRef = useRef(null);
-                const [isComposing, setIsComposing] = useState(false);
-                
-                const saveDataToFile = () => {
-                    try {
-                        // 학생 목록 뿐만 아니라 팀, 팀 개수 등 전체 상태를 저장
-                        const dataToSave = { 
+                const fileInputRef = useRef(null);
+                const [isComposing, setIsComposing] = useState(false);
+                
+                const saveDataToFile = () => {
+                    try {
+                        const dataToSave = { 
                             students: state.students, 
                             teams: state.teams, 
                             teamCount: state.teamCount, 
                             fixedStudentIds: Array.from(state.fixedStudentIds) 
                         };
-                        const dataStr = JSON.stringify(dataToSave, null, 2);
-                        const blob = new Blob([dataStr], {type: "text/plain;charset=utf-8"});
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = '팀구성_데이터.txt'; // 파일 이름 변경
-                        link.href = url;
-                        link.click();
-                        URL.revokeObjectURL(url);
-                    } catch (error) { setModalState({isOpen: true, title: "오류", content: "데이터 저장에 실패했습니다."}); }
-                };
+                        const dataStr = JSON.stringify(dataToSave, null, 2);
+                        const blob = new Blob([dataStr], {type: "text/plain;charset=utf-8"});
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = '팀구성_데이터.txt';
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    } catch (error) { setModalState({isOpen: true, title: "오류", content: "데이터 저장에 실패했습니다."}); }
+                };
 
-                const loadDataFromFile = (event) => {
-                    const file = event.target.files[0];
-                    if (!file) { event.target.value = null; return; };
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const loadedData = JSON.parse(e.target.result);
-                            // 학생 목록이 있는지 확인 후 새로운 reducer 액션 호출
-                            if (loadedData.students && Array.isArray(loadedData.students)) {
-                                dispatch({ type: 'LOAD_TEAMS_FROM_FILE', payload: loadedData });
-                            } else { setModalState({isOpen: true, title: "오류", content: "파일에 올바른 팀 구성 정보가 없습니다."}); }
-                        } catch (error) { setModalState({isOpen: true, title: "오류", content: "파일을 읽는 데 실패했습니다. 올바른 데이터 파일인지 확인해 주세요."});
-                        } finally { event.target.value = null; }
-                    };
-                    reader.readAsText(file);
-                };
+                const loadDataFromFile = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) { event.target.value = null; return; };
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const loadedData = JSON.parse(e.target.result);
+                            if (loadedData.students && Array.isArray(loadedData.students)) {
+                                dispatch({ type: 'LOAD_STATE', payload: loadedData });
+                            } else { setModalState({isOpen: true, title: "오류", content: "파일에 올바른 팀 구성 정보가 없습니다."}); }
+                        } catch (error) { setModalState({isOpen: true, title: "오류", content: "파일을 읽는 데 실패했습니다. 올바른 데이터 파일인지 확인해 주세요."});
+                        } finally { event.target.value = null; }
+                    };
+                    reader.readAsText(file);
+                };
                 
                 const handleDelete = (studentId) => {
                     const student = state.students.find(s => s.id === studentId);
@@ -1512,10 +1624,10 @@
                                         <tr key={student.id}>
                                             <td className="px-3 py-1 text-center"><input type="number" defaultValue={student.studentId} onBlur={e => handleIdUpdate(student.id, e.target.value)} className="w-full text-center bg-transparent rounded focus:bg-yellow-50 outline-none"/></td>
                                             <td className="px-3 py-1">
-                                                <input 
-                                                    key={student.name} // defaultValue를 업데이트하기 위해 key 추가
-                                                    type="text" 
-                                                    defaultValue={student.name} 
+                                                <input
+                                                    key={student.name}
+                                                    type="text"
+                                                    defaultValue={student.name}
                                                     className="w-full bg-transparent rounded focus:bg-yellow-50 outline-none"
                                                     onCompositionStart={() => setIsComposing(true)}
                                                     onCompositionEnd={(e) => {
@@ -1550,17 +1662,24 @@
                             <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
                         </div>
                     </div>
+
                     <div className="text-sm text-gray-600 bg-slate-100 p-4 rounded-lg mb-6 border">
-                        <p className="mb-1">• 팀 배정 완료 후에도, 드롭다운 버튼을 통해 두 학생 간 팀 교환 가능.  • ☑️클릭 시 👑로 변경: 해당 학생을 팀 내에 고정한 상태로 랜덤 배정 실시. (+팀 리더 표시 기능)</p>
+                        <p className="mb-1">• {useClassData ? "'현재 학급 명단'으로 팀을 구성합니다. (우측 상단 모드 변경 스위치)" : "'파일/수동 관리' 모드에서는 페이지 하단의 목록으로 팀을 구성합니다. (우측 상단 모드 변경 스위치)"}</p>
+                        <p className="mb-1">• 팀 배정 완료 후에도, 각 팀원 이름 옆 드롭다운을 통해 다른 학생과 위치를 바꿀 수 있습니다.</p>
+                        <p>• ☑️ 아이콘을 클릭하여 👑으로 바꾸면, 해당 학생을 팀에 고정한 채 나머지를 랜덤 배정합니다. (<b>팀 리더</b> 표시)</p>
                     </div>
+                    
                     <div className="bg-white p-4 rounded-xl shadow-md mb-8">
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap">
                             <div className="flex items-center gap-2">
                                 <input type="number" value={state.teamCount} onChange={(e) => dispatch({ type: 'SET_TEAM_COUNT', payload: parseInt(e.target.value, 10) || 1 })} className="w-24 p-2 border border-gray-300 rounded-md text-center" min="1" />
                                 <label className="font-semibold text-gray-700 whitespace-nowrap">개 팀으로 나누기</label>
                             </div>
                             <button onClick={handleGenerateTeams} className="btn-green w-full sm:w-auto">✨ 팀 나누기!</button>
                             {state.teams.length > 0 && <button onClick={() => dispatch({ type: 'SORT_TEAMS' })} className="btn-gray">번호순 재정렬</button>}
+                            {state.teams.length > 0 && <button onClick={handleExcelDownload} className="btn-gray">엑셀로 다운로드</button>}
+                            {useClassData && state.teams.length > 0 && <button onClick={handleSaveTeams} className="btn-sky">결과 저장(학생 공유)</button>}
+                            {useClassData && state.teams.length > 0 && <button onClick={handleResetTeams} className="btn-red">초기화</button>}
                         </div>
                     </div>
 
@@ -1592,17 +1711,17 @@
                 </div>
             );
         };
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★★★      랜덤 자리배치 컴포넌트 시작      ★★★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // ★★★★★       랜덤 자리배치 컴포넌트 시작       ★★★★★
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         const createInitialSeatingState = () => ({
             students: Array.from({ length: 28 }, (_, i) => ({ id: `manual-${i + 1}`, name: `학생 ${i + 1}`, studentId: i + 1 })),
             sections: { left: { name: '왼쪽', rows: 5, cols: 2 }, center: { name: '가운데', rows: 4, cols: 2 }, right: { name: '오른쪽', rows: 5, cols: 2 } },
             seatAssignments: {},
             fixedSeats: new Set(),
         });
-        
+
         const seatingReducer = (state, action) => {
             switch (action.type) {
                 case 'LOAD_DATA_FROM_FILE': {
@@ -1612,16 +1731,14 @@
                         const originalFileId = s.id;
                         const studentNumber = s.studentId !== undefined ? s.studentId : originalFileId;
                         const newInternalId = `manual-${studentNumber}`;
-                        
                         idMap.set(originalFileId, newInternalId);
-        
                         return {
                             id: newInternalId,
                             name: s.name,
                             studentId: parseInt(studentNumber, 10),
                         };
                     });
-        
+
                     const formattedAssignments = {};
                     if (seatAssignments) {
                         for (const seatId in seatAssignments) {
@@ -1641,15 +1758,32 @@
                         fixedSeats: new Set(fixedSeats || []) 
                     };
                 }
-        
+                
                 case 'LOAD_STUDENTS': {
                     const students = action.payload;
-                    const newState = { ...createInitialSeatingState(), students };
-                    const initialSeatIds=[]; Object.entries(newState.sections).forEach(([key,{rows,cols}])=>{for(let r=0;r<rows;r++){for(let c=0;c<cols;c++){initialSeatIds.push(`${key.charAt(0).toUpperCase()}-${r+1}-${c+1}`)}}});
-                    const assignments={}; initialSeatIds.forEach((seatId,index)=>{if(students[index]){assignments[seatId]=students[index].id}});
-                    return {...newState, seatAssignments: assignments};
+                    const newState = { ...createInitialSeatingState(), sections: state.sections, students };
+                    const allSeatIds = [];
+                    Object.entries(newState.sections).forEach(([key, { rows, cols }]) => {
+                        for (let r = 0; r < rows; r++) {
+                            for (let c = 0; c < cols; c++) {
+                                allSeatIds.push(`${key.charAt(0).toUpperCase()}-${r + 1}-${c + 1}`);
+                            }
+                        }
+                    });
+
+                    const assignments = {};
+                    allSeatIds.forEach((seatId, index) => {
+                        if (students[index]) {
+                            assignments[seatId] = students[index].id;
+                        }
+                    });
+
+                    return { ...newState, seatAssignments: assignments };
                 }
-                case 'RESET_TO_MANUAL': return createInitialSeatingState();
+
+                case 'RESET_TO_MANUAL':
+                    return createInitialSeatingState();
+                
                 case 'UPDATE_LAYOUT': {
                     const { sectionKey, dimension, value } = action.payload;
                     const numValue = Math.max(0, parseInt(value, 10) || 0);
@@ -1668,17 +1802,17 @@
                             fixedStudentIds.add(studentIdInSeat);
                         }
                     });
-        
+
                     const studentsToShuffle = students.filter(s => !fixedStudentIds.has(s.id));
                     const shuffledStudentIds = studentsToShuffle.map(s => s.id).sort(() => Math.random() - 0.5);
                     const seatsToFill = allSeatIds.filter(seatId => !state.fixedSeats.has(seatId));
-        
+                    
                     const newAssignments = { ...fixedAssignments };
                     seatsToFill.forEach((seatId, index) => {
                         if (shuffledStudentIds[index]) {
                             newAssignments[seatId] = shuffledStudentIds[index];
                         } else {
-                            delete newAssignments[seatId];
+                            delete newAssignments[seatId]; // 학생 수보다 자리가 많을 경우 빈자리로 남김
                         }
                     });
                     
@@ -1691,9 +1825,11 @@
                     const oldStudentInTargetSeat = newAssignments[seatId];
                     const oldSeatOfNewStudent = Object.keys(newAssignments).find(key => newAssignments[key] === studentId);
                     
+                    // 기존 정보 삭제
                     delete newAssignments[seatId];
                     if (oldSeatOfNewStudent) { delete newAssignments[oldSeatOfNewStudent]; }
                     
+                    // 새 정보 할당 (교환 로직 포함)
                     if (studentId) {
                         newAssignments[seatId] = studentId;
                         if (oldStudentInTargetSeat && oldSeatOfNewStudent) {
@@ -1741,37 +1877,30 @@
                 default: return state;
             }
         };
-        
-        const SeatingChart = ({ students: propStudents, setModalState }) => {
+
+        const SeatingChart = ({ propStudents, selectedClass, setModalState }) => {
             const [useClassData, setUseClassData] = useState(true);
             const [isScreenshotMode, setIsScreenshotMode] = useState(false);
             const [state, dispatch] = useReducer(seatingReducer, undefined, createInitialSeatingState);
-        
+
             useEffect(() => {
                 if (useClassData) {
-                    if (propStudents && propStudents.length > 0) {
-                        const formattedStudents = propStudents.map(s => ({...s, studentId: parseInt(s.studentId, 10) || 0 }));
-                        dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
-                    }
-                } else if (!useClassData && state.students.length === 0) {
-                    dispatch({ type: 'RESET_TO_MANUAL' });
+                    const formattedStudents = (propStudents || []).map(s => ({
+                        ...s,
+                        studentId: parseInt(s.studentId, 10) || 0
+                    }));
+                    dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
                 }
             }, [propStudents, useClassData]);
-            
+
             const handleModeChange = (e) => {
                 const isFileMode = e.target.checked;
                 setUseClassData(!isFileMode);
-                
                 if (isFileMode) {
                     dispatch({ type: 'RESET_TO_MANUAL' });
-                } else {
-                    if (propStudents) {
-                        const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
-                        dispatch({ type: 'LOAD_STUDENTS', payload: formattedStudents });
-                    }
                 }
-            };       
-            
+            };
+
             const allSeatIds = useMemo(() => {
                 const ids = [];
                 Object.entries(state.sections).forEach(([key, { rows, cols }]) => {
@@ -1779,7 +1908,18 @@
                 });
                 return ids;
             }, [state.sections]);
-        
+
+            const handleRandomize = () => {
+                const studentCount = state.students.length;
+                const seatCount = allSeatIds.length;
+                
+                if (studentCount > seatCount) {
+                    setModalState({isOpen: true, title: "알림", content: `자리가 부족합니다! 학생 ${studentCount - seatCount}명이 앉을 자리가 없어요.`});
+                    return;
+                }
+                dispatch({ type: 'RANDOMIZE_SEATS', payload: { allSeatIds, students: state.students } });
+            };
+
             const handleSaveAsImage = () => {
                 const element = document.getElementById('seatingChartArea');
                 if (!element) return;
@@ -1791,78 +1931,29 @@
                         link.href = canvas.toDataURL('image/png');
                         link.click();
                         setIsScreenshotMode(false);
-                    }).catch(error => { setIsScreenshotMode(false); });
+                    }).catch(error => {
+                        console.error("이미지 저장 실패:", error);
+                        setIsScreenshotMode(false);
+                    });
                 }, 100);
             };
-        
-            const handleRandomize = () => {
-                const studentIdsWithSeats = new Set(Object.values(state.seatAssignments));
-                const unassignedStudents = state.students.filter(s => !studentIdsWithSeats.has(s.id));
-                const availableSeats = allSeatIds.filter(id => !state.seatAssignments[id] && !state.fixedSeats.has(id));
-                if (unassignedStudents.length > availableSeats.length) {
-                    setModalState({isOpen: true, title: "알림", content: `자리가 부족합니다! 학생 ${unassignedStudents.length - availableSeats.length}명이 앉을 자리가 없어요.`});
-                    return;
-                }
-                dispatch({ type: 'RANDOMIZE_SEATS', payload: { allSeatIds, students: state.students } });
-            };
-        
+            
             const ManualSeatEditor = () => {
                 const fileInputRef = useRef(null);
                 const [isComposing, setIsComposing] = useState(false);
-        
                 const studentChunks = useMemo(() => {
                     const chunkSize = 10; const chunks = [];
                     const sortedStudents = [...state.students].sort((a,b) => a.studentId - b.studentId);
                     for (let i = 0; i < sortedStudents.length; i += chunkSize) { chunks.push(sortedStudents.slice(i, i + chunkSize)); }
                     return chunks;
                 }, [state.students]);
-        
-                const saveDataToFile = () => {
-                    try {
-                        const dataToSave = { students: state.students, sections: state.sections, seatAssignments: state.seatAssignments, fixedSeats: Array.from(state.fixedSeats) };
-                        const dataStr = JSON.stringify(dataToSave, null, 2);
-                        const blob = new Blob([dataStr], {type: "text/plain;charset=utf-8"});
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = '자리배치_데이터.txt';
-                        link.href = url;
-                        link.click();
-                        URL.revokeObjectURL(url);
-                        setModalState({isOpen: true, title: "알림", content: "데이터를 성공적으로 저장했습니다."});
-                    } catch (error) { setModalState({isOpen: true, title: "오류", content: "데이터 저장에 실패했습니다."}); }
-                };
-        
-                const loadDataFromFile = (event) => {
-                    const file = event.target.files[0];
-                    if (!file) { event.target.value = null; return; }
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const loadedData = JSON.parse(e.target.result);
-                            if (loadedData.students && Array.isArray(loadedData.students)) {
-                                dispatch({ type: 'LOAD_DATA_FROM_FILE', payload: loadedData });
-                            } else { setModalState({isOpen: true, title: "오류", content: "파일에 올바른 학생 명단 정보가 없습니다."}); }
-                        } catch (error) { setModalState({isOpen: true, title: "오류", content: "파일을 읽는 데 실패했습니다. 올바른 데이터 파일인지 확인해 주세요."});
-                        } finally { event.target.value = null; }
-                    };
-                    reader.readAsText(file);
-                };
-                
-                const handleDelete = (studentId) => {
-                    const student = state.students.find(s => s.id === studentId);
-                    setModalState({ isOpen: true, isConfirm: true, title: "학생 삭제", content: `'${student.name}' 학생을 삭제하시겠습니까?`, onConfirm: () => { dispatch({ type: 'DELETE_STUDENT', payload: studentId }); return true; }});
-                };
-                
-                const handleIdUpdate = (id, value) => {
-                    const newValue = parseInt(value, 10);
-                    if (isNaN(newValue) || newValue < 1) { setModalState({isOpen: true, title: '오류', content:'유효하지 않은 번호입니다.'}); return; }
-                    if (state.students.some(s => s.studentId === newValue && s.id !== id)) { setModalState({isOpen: true, title: '오류', content:'이미 사용 중인 번호입니다.'}); return; }
-                    dispatch({ type: 'UPDATE_STUDENT', payload: { id, field: 'studentId', value: newValue }});
-                };
-                const handleNameChange = (id, value) => {
-                    if (isComposing) return;
-                    dispatch({ type: 'UPDATE_STUDENT', payload: { id, field: 'name', value } });
-                };
+
+                const saveDataToFile = () => { try { const dataToSave = { students: state.students, sections: state.sections, seatAssignments: state.seatAssignments, fixedSeats: Array.from(state.fixedSeats) }; const dataStr = JSON.stringify(dataToSave, null, 2); const blob = new Blob([dataStr], {type: "text/plain;charset=utf-8"}); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.download = '자리배치_데이터.txt'; link.href = url; link.click(); URL.revokeObjectURL(url); setModalState({isOpen: true, title: "알림", content: "데이터를 성공적으로 저장했습니다."}); } catch (error) { setModalState({isOpen: true, title: "오류", content: "데이터 저장에 실패했습니다."}); }};
+                const loadDataFromFile = (event) => { const file = event.target.files[0]; if (!file) { event.target.value = null; return; } const reader = new FileReader(); reader.onload = (e) => { try { const loadedData = JSON.parse(e.target.result); if (loadedData.students && Array.isArray(loadedData.students)) { dispatch({ type: 'LOAD_DATA_FROM_FILE', payload: loadedData }); } else { setModalState({isOpen: true, title: "오류", content: "파일에 올바른 학생 명단 정보가 없습니다."}); } } catch (error) { setModalState({isOpen: true, title: "오류", content: "파일을 읽는 데 실패했습니다. 올바른 데이터 파일인지 확인해 주세요."}); } finally { event.target.value = null; } }; reader.readAsText(file); };
+                const handleDelete = (studentId) => { const student = state.students.find(s => s.id === studentId); setModalState({ isOpen: true, isConfirm: true, title: "학생 삭제", content: `'${student.name}' 학생을 삭제하시겠습니까?`, onConfirm: () => { dispatch({ type: 'DELETE_STUDENT', payload: studentId }); return true; }}); };
+                const handleIdUpdate = (id, value) => { const newValue = parseInt(value, 10); if (isNaN(newValue) || newValue < 1) { setModalState({isOpen: true, title: '오류', content:'유효하지 않은 번호입니다.'}); return; } if (state.students.some(s => s.studentId === newValue && s.id !== id)) { setModalState({isOpen: true, title: '오류', content:'이미 사용 중인 번호입니다.'}); return; } dispatch({ type: 'UPDATE_STUDENT', payload: { id, field: 'studentId', value: newValue }}); };
+                const handleNameChange = (id, value) => { if (isComposing) return; dispatch({ type: 'UPDATE_STUDENT', payload: { id, field: 'name', value } }); };
+
                 return (
                     <div className="bg-white p-4 mt-6 rounded-xl shadow-md">
                         <input type="file" ref={fileInputRef} id="seatFileLoader" accept=".txt" style={{display: 'none'}} onChange={loadDataFromFile} />
@@ -1883,18 +1974,8 @@
                                             <tr key={student.id} className="border-b">
                                                 <td className="px-2 py-0.5 text-center"><input type="number" value={student.studentId} onChange={e => handleIdUpdate(student.id, e.target.value)} className="w-full p-1 text-center bg-transparent rounded focus:bg-yellow-50"/></td>
                                                 <td className="px-2 py-0.5">
-                                                    <input
-                                                        type="text"
-                                                        defaultValue={student.name}
-                                                        className="w-full p-1 bg-transparent rounded focus:bg-yellow-50"
-                                                        onCompositionStart={() => setIsComposing(true)}
-                                                        onCompositionEnd={(e) => {
-                                                            setIsComposing(false);
-                                                            handleNameChange(student.id, e.target.value);
-                                                        }}
-                                                        onChange={(e) => handleNameChange(student.id, e.target.value)}
-                                                    />
-                                                </td>                                       
+                                                    <input type="text" defaultValue={student.name} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={(e) => { setIsComposing(false); handleNameChange(student.id, e.target.value); }} onChange={(e) => handleNameChange(student.id, e.target.value)} className="w-full p-1 bg-transparent rounded focus:bg-yellow-50" />
+                                                </td>
                                                 <td className="px-2 py-0.5 text-center"><button onClick={() => handleDelete(student.id)} className="text-red-500 hover:text-red-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /> </svg></button></td>
                                             </tr>))}
                                         </tbody>
@@ -1906,7 +1987,7 @@
                     </div>
                 );
             };
-        
+
             return (
                 <div>
                     <div className="flex justify-between items-center mb-6">
@@ -1920,7 +2001,7 @@
                             <span className={`text-sm font-semibold ${!useClassData ? 'text-blue-600' : 'text-gray-400'}`}>파일/수동 관리</span>
                         </div>
                     </div>
-        
+
                     {/* --- 컨트롤 패널 영역 --- */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         {/* 배치 설정 */}
@@ -1932,21 +2013,11 @@
                                         <div className="flex items-center justify-center gap-x-3 gap-y-2 mt-2 flex-wrap">
                                             <div className="flex items-center gap-1">
                                                 <label className="text-sm font-medium">행:</label>
-                                                <input 
-                                                    type="number" 
-                                                    value={rows} 
-                                                    onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} 
-                                                    className="w-16 p-1 border rounded-md text-center"
-                                                />
+                                                <input type="number" value={rows} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'rows', value: e.target.value}})} className="w-16 p-1 border rounded-md text-center"/>
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <label className="text-sm font-medium">열:</label>
-                                                <input 
-                                                    type="number" 
-                                                    value={cols} 
-                                                    onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} 
-                                                    className="w-16 p-1 border rounded-md text-center"
-                                                />
+                                                <input type="number" value={cols} onChange={(e) => dispatch({type: 'UPDATE_LAYOUT', payload: {sectionKey: key, dimension: 'cols', value: e.target.value}})} className="w-16 p-1 border rounded-md text-center"/>
                                             </div>
                                         </div>
                                     </div>
@@ -1963,7 +2034,7 @@
                             <button onClick={handleSaveAsImage} className="btn-sky w-full">🖼️ 이미지로 저장</button>
                         </div>
                     </div>
-        
+
                     {/* --- 자리 배치표 영역 --- */}
                     <main id="seatingChartArea" className="bg-white p-2 sm:p-4 rounded-xl shadow-md">
                         <div className="overflow-x-auto pb-2">
@@ -1997,6 +2068,8 @@
                 </div>
             );
         };
+
+        
         // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         // ★★★★★                 컴포넌트 종료                 ★★★★★
         // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -2156,6 +2229,7 @@
                 { id: 'schedule', label: '일정 확인', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
                 { id: 'scores', label: '수행 점수', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> },
                 { id: 'test-scores', label: '시험 점수', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+                { id: 'my-team', label: '나의 팀 구성', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.002 3.002 0 012.288-2.542M11.644 16.143a3.003 3.003 0 011.712-2.542m0 0A3 3 0 0115 11.236V10c0-1.657-1.343-3-3-3S9 8.343 9 10v1.236A3 3 0 0111.644 16.143z" /></svg> },
                 { id: 'info', label: '내 정보', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg> }
             ];
 
@@ -2172,9 +2246,9 @@
                     case 'students': return isTeacher ? <StudentManagement students={classData.students} pendingStudents={classData.pendingStudents} deleteStudent={deleteStudent} approveStudent={approveStudent} rejectStudent={rejectStudent} inviteStudent={inviteStudent} classes={classes} setModalState={setModalState} selectedClass={selectedClass} /> : null;
                     case 'scores': return <PerformanceScoreManager isTeacher={isTeacher} userData={userData} selectedClass={selectedClass} setModalState={setModalState} />;
                     case 'test-scores': return <TestScoreViewer isTeacher={isTeacher} userData={userData} selectedClass={selectedClass} setModalState={setModalState} />;
-                    case 'team-builder': return isTeacher ? <TeamBuilder students={classData.students} setModalState={setModalState} /> : null;
-                    case 'seating-chart': return isTeacher ? <SeatingChart students={classData.students} setModalState={setModalState} /> : null;
-                    case 'class': return isTeacher ? <ClassManagement teacherId={user.uid} classes={classes} setModalState={setModalState} onUpdateClass={updateClass} onDeleteClass={deleteClass} isAdmin={isAdmin} /> : null;
+                    case 'team-builder': return isTeacher ? <TeamBuilder propStudents={classData.students} selectedClass={selectedClass} setModalState={setModalState} /> : null;
+                    case 'seating-chart': return isTeacher ? <SeatingChart propStudents={classData.students} selectedClass={selectedClass} setModalState={setModalState} /> : null;                    case 'class': return isTeacher ? <ClassManagement teacherId={user.uid} classes={classes} setModalState={setModalState} onUpdateClass={updateClass} onDeleteClass={deleteClass} isAdmin={isAdmin} /> : null;
+                    case 'my-team': return <StudentTeamView selectedClass={selectedClass} />;
                     case 'info': return <UserInfo user={user} userData={userData} setModalState={setModalState} />;
                     default: return null;
                 }
