@@ -1677,7 +1677,7 @@
                             </div>
                             <button onClick={handleGenerateTeams} className="btn-green w-full sm:w-auto">✨ 팀 나누기!</button>
                             {state.teams.length > 0 && <button onClick={() => dispatch({ type: 'SORT_TEAMS' })} className="btn-gray">번호순 재정렬</button>}
-                            {state.teams.length > 0 && <button onClick={handleExcelDownload} className="btn-gray">엑셀로 다운로드</button>}
+                            {state.teams.length > 0 && <button onClick={handleExcelDownload} className="btn-gray">엑셀 다운로드</button>}
                             {useClassData && state.teams.length > 0 && <button onClick={handleSaveTeams} className="btn-sky">결과 저장(학생 공유)</button>}
                             {useClassData && state.teams.length > 0 && <button onClick={handleResetTeams} className="btn-red">초기화</button>}
                         </div>
@@ -2198,9 +2198,7 @@
 
                             await db.collection('schedules').doc(classIdToDelete).delete();
                             await db.collection('assessments').doc(classIdToDelete).delete();
-                            if (classItem.googleSheetId) {
-                                await db.collection('scores').doc(classIdToDelete).delete().catch(e => console.log("Scores doc not found, skipping delete."));
-                            }
+                            await db.collection('scores').doc(classIdToDelete).delete().catch(e => console.log("Scores doc not found, skipping delete."));
                             await db.collection('classes').doc(classIdToDelete).delete();
                             
                             setModalState({ isOpen: true, title: "삭제 완료", content: "학급이 성공적으로 삭제되었습니다." });
@@ -2342,17 +2340,29 @@
                     const result = await auth.signInWithPopup(provider);
                     const gUser = result.user;
                     const email = gUser.email;
+
                     if (!email.endsWith(`@${CONSTANTS.SCHOOL_DOMAIN}`)) {
                         await auth.signOut();
-                        setError(`'${CONSTANTS.SCHOOL_DOMAIN}' 학교 계정으로만 로그인이 가능합니다.`); return;
+                        setError(`'${CONSTANTS.SCHOOL_DOMAIN}' 학교 계정으로만 로그인이 가능합니다.`);
+                        return;
                     }
+
+                    const authorizedTeacherDoc = await db.collection(CONSTANTS.COLLECTIONS.AUTHORIZED_TEACHERS).doc(email).get();
+
                     if (role === 'teacher') {
-                        const authorizedTeacherDoc = await db.collection(CONSTANTS.COLLECTIONS.AUTHORIZED_TEACHERS).doc(email).get();
                         if (!authorizedTeacherDoc.exists) {
-                             await auth.signOut();
-                             setError(`승인되지 않은 교사 계정입니다. 관리자에게 문의하세요.`); return;
+                            await auth.signOut();
+                            setError(`승인되지 않은 교사 계정입니다. 관리자에게 문의하세요.`);
+                            return;
+                        }
+                    } else if (role === 'student') {
+                        if (authorizedTeacherDoc.exists) {
+                            await auth.signOut();
+                            setError(`교사로 등록된 계정입니다. '교사'로 로그인해주세요.`);
+                            return;
                         }
                     }
+                    
                     const collectionName = role === 'teacher' ? 'teachers' : 'students';
                     const userRef = db.collection(collectionName).doc(gUser.uid);
                     const userDoc = await userRef.get();
@@ -2368,9 +2378,9 @@
                             await userRef.set(newUserProfile);
                             setModalState({ isOpen: true, title: '첫 로그인', content: '계정이 생성되었습니다! 선생님이 학급에 초대하고 승인하면 서비스 이용이 가능합니다.' });
                         } else {
-                             const newUserProfile = { name: gUser.displayName || '이름 없음', schoolAccount: gUser.email };
-                             await userRef.set(newUserProfile);
-                             setModalState({ isOpen: true, title: '환영합니다!', content: '교사 계정이 생성되었습니다. \'학급 관리\' 메뉴에서 첫 학급을 만들어주세요.' });
+                            const newUserProfile = { name: gUser.displayName || '이름 없음', schoolAccount: gUser.email };
+                            await userRef.set(newUserProfile);
+                            setModalState({ isOpen: true, title: '환영합니다!', content: '교사 계정이 생성되었습니다. \'학급 관리\' 메뉴에서 첫 학급을 만들어주세요.' });
                         }
                     }
                 } catch (err) {
