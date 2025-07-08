@@ -1860,30 +1860,42 @@
                 }
                 case 'RANDOMIZE_SEATS': {
                     const { allSeatIds, students } = action.payload;
-                    
+
                     const fixedAssignments = {};
                     const fixedStudentIds = new Set();
                     state.fixedSeats.forEach(seatId => {
                         const studentIdInSeat = state.seatAssignments[seatId];
+                        fixedAssignments[seatId] = studentIdInSeat;
                         if (studentIdInSeat) {
-                            fixedAssignments[seatId] = studentIdInSeat;
                             fixedStudentIds.add(studentIdInSeat);
                         }
                     });
 
                     const studentsToShuffle = students.filter(s => !fixedStudentIds.has(s.id));
-                    const shuffledStudentIds = studentsToShuffle.map(s => s.id).sort(() => Math.random() - 0.5);
                     const seatsToFill = allSeatIds.filter(seatId => !state.fixedSeats.has(seatId));
+                    
+                    const pool = studentsToShuffle.map(s => s.id);
+                    const emptySlotsCount = seatsToFill.length - studentsToShuffle.length;
+                    for (let i = 0; i < emptySlotsCount; i++) {
+                        pool.push(null);
+                    }
+                    
+                    const shuffledPool = pool.sort(() => Math.random() - 0.5);
                     
                     const newAssignments = { ...fixedAssignments };
                     seatsToFill.forEach((seatId, index) => {
-                        if (shuffledStudentIds[index]) {
-                            newAssignments[seatId] = shuffledStudentIds[index];
-                        } else {
-                            delete newAssignments[seatId]; // 학생 수보다 자리가 많을 경우 빈자리로 남김
+                        const studentId = shuffledPool[index];
+                        if (studentId) {
+                            newAssignments[seatId] = studentId;
                         }
                     });
                     
+                    Object.keys(newAssignments).forEach(key => {
+                        if (!newAssignments[key]) {
+                            delete newAssignments[key];
+                        }
+                    });
+
                     return { ...state, seatAssignments: newAssignments };
                 }
                 case 'SET_SEAT_ASSIGNMENT': {
@@ -1910,12 +1922,12 @@
                     return { ...state, seatAssignments: newAssignments, fixedSeats: newFixedSeats };
                 }
                 case 'TOGGLE_FIX_SEAT': {
-                    const {seatId, showModal} = action.payload;
+                    const {seatId} = action.payload;
                     const newFixedSeats = new Set(state.fixedSeats);
-                    if (newFixedSeats.has(seatId)) { newFixedSeats.delete(seatId); } 
-                    else {
-                        if (state.seatAssignments[seatId]) { newFixedSeats.add(seatId); } 
-                        else { showModal("학생이 배정되지 않은 좌석은 고정할 수 없습니다."); }
+                    if (newFixedSeats.has(seatId)) {
+                        newFixedSeats.delete(seatId);
+                    } else {
+                        newFixedSeats.add(seatId);
                     }
                     return { ...state, fixedSeats: newFixedSeats };
                 }
@@ -2098,7 +2110,7 @@
                                                     const student = state.students.find(s=>s.id === state.seatAssignments[seatId]);
                                                     return (<div key={seatId} className={`relative w-full h-24 border rounded-lg shadow-sm flex flex-col items-center justify-center transition-colors ${(state.fixedSeats.has(seatId) && !isScreenshotMode) ? 'bg-rose-200 border-rose-400' : 'bg-white'}`}>
                                                         {!isScreenshotMode && <div className="absolute top-1.5 left-2.5 text-xs text-gray-400 font-mono">{seatId}</div>}
-                                                        {!isScreenshotMode && <button onClick={() => dispatch({type: 'TOGGLE_FIX_SEAT', payload: {seatId, showModal: (msg) => setModalState({isOpen: true, title: "알림", content: msg}) }})} title="고정/해제" className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full border transition-all ${state.fixedSeats.has(seatId) ? 'bg-rose-500 border-rose-700' : 'bg-gray-300 hover:bg-gray-400 border-gray-400'}`}><span className="text-white text-sm">{state.fixedSeats.has(seatId) ? '🔒' : '🔓'}</span></button>}
+                                                        {!isScreenshotMode && <button onClick={() => dispatch({type: 'TOGGLE_FIX_SEAT', payload: {seatId} })} title="고정/해제" className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full border transition-all ${state.fixedSeats.has(seatId) ? 'bg-rose-500 border-rose-700' : 'bg-gray-300 hover:bg-gray-400 border-gray-400'}`}><span className="text-white text-sm">{state.fixedSeats.has(seatId) ? '🔒' : '🔓'}</span></button>}
                                                         {student && <div className="text-gray-800 flex flex-col items-center justify-center text-center -mt-3"><div className="font-bold text-lg">{student.name}</div><div className="text-base text-gray-500">({student.studentId}번)</div></div>}
                                                         {!isScreenshotMode && <div className="absolute bottom-1.5 w-full px-2"><select value={state.seatAssignments[seatId] || ''} onChange={(e) => dispatch({type: 'SET_SEAT_ASSIGNMENT', payload: {seatId, studentIdStr: e.target.value }})} className="w-full text-sm border-gray-300 rounded p-1"><option value="">--</option>{state.students.sort((a,b) => a.studentId - b.studentId).map(s => (<option key={s.id} value={s.id}>{s.studentId}. {s.name}</option>))}</select></div>}
                                                     </div>);
