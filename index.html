@@ -167,40 +167,39 @@
         // 3. 최종 useStudentSearch 훅
         const useStudentSearch = () => {
             const { allStudentsCache, isCacheLoading, fetchAndCacheStudents } = React.useContext(StudentCacheContext);
-            
-            const [searchTerm, setSearchTerm] = useState('');
+            const [searchTerm, _setSearchTerm] = useState(''); 
             const [searchResults, setSearchResults] = useState([]);
-            
-            const handleSearch = useCallback(() => {
-                if (!allStudentsCache || !searchTerm.trim()) {
+            const hasFetched = useRef(false); // 데이터 요청 여부를 추적하는 ref
+
+            const setSearchTerm = (term) => {
+                _setSearchTerm(term);
+
+                if (term.trim() && !allStudentsCache && !hasFetched.current) {
+                    hasFetched.current = true;
+                    fetchAndCacheStudents();
+                }
+            };
+
+            useEffect(() => {
+                if (!searchTerm.trim()) {
                     setSearchResults([]);
                     return;
                 }
-                
-                const lowerCaseSearchTerm = searchTerm.toLowerCase();
-                const filtered = allStudentsCache.filter(student => 
-                    (student.name && student.name.toLowerCase().includes(lowerCaseSearchTerm)) ||
-                    (student.studentId && student.studentId.toString().includes(searchTerm))
-                );
-                setSearchResults(filtered);
-            }, [searchTerm, allStudentsCache]);
-            
-            // 검색창에 글자를 입력할 때마다 바로 검색 실행
-            useEffect(() => {
-                // 처음 검색을 시도할 때, 캐시가 비어있으면 데이터를 불러옵니다.
-                if (allStudentsCache === null) {
-                    fetchAndCacheStudents();
-                }
-                // 캐시가 준비되면 검색을 수행합니다.
+
                 if (allStudentsCache) {
-                    handleSearch();
+                    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+                    const filtered = allStudentsCache.filter(student => 
+                        (student.name && student.name.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                        (student.studentId && student.studentId.toString().includes(searchTerm))
+                    );
+                    setSearchResults(filtered);
                 }
-            }, [searchTerm, allStudentsCache, handleSearch, fetchAndCacheStudents]);
-            
+            }, [searchTerm, allStudentsCache]);
+
             return { 
                 searchTerm, 
-                setSearchTerm, 
-                isSearching: isCacheLoading, // 로딩 상태를 isSearching으로 통일하여 전달
+                setSearchTerm,
+                isSearching: isCacheLoading, 
                 searchResults 
             };
         };
