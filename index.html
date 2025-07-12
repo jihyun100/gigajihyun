@@ -711,7 +711,7 @@
                                     value={classNotice}
                                     onChange={(e) => setClassNotice(e.target.value)}
                                     placeholder="학급 공지사항을 입력하세요..."
-                                    className="w-full p-2 border rounded-md"
+                                    className="w-full p-2 border rounded-md placeholder-sky-500"
                                 />
                                 <button onClick={handleNoticeSave} className="btn-sky !px-4 !py-2 flex-shrink-0">저장</button>
                             </div>
@@ -982,7 +982,7 @@
                             onSave={onUpdateClass}
                         />
                     )}
-                    <h2 className="text-3xl font-bold mb-6 text-gray-800">☆  학급 관리</h2>
+                    <h2 className="text-3xl font-bold mb-6 text-gray-800">⚙️ 학급 관리</h2>
                     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                         <h3 className="text-xl font-bold mb-4">새 학급 추가</h3>
                         <form onSubmit={handleAddClass} className="flex flex-col md:flex-row gap-4 items-end">
@@ -1064,7 +1064,7 @@
             return (
                 <div>
                     <InviteStudentModal isOpen={!!invitingStudent} onClose={() => setInvitingStudent(null)} student={invitingStudent} classes={classes} onInvite={inviteStudent} />
-                    <h2 className="text-3xl font-bold mb-6 text-gray-800">☆  학생 관리</h2>
+                    <h2 className="text-3xl font-bold mb-6 text-gray-800">👥 학생 관리</h2>
                     
                     {pendingStudents.length > 0 && (
                         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -1233,19 +1233,19 @@
                 fetchSheetData();
             }, [selectedClass]);
 
-            if (loading) return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">☆  시험 점수</h2><div className="bg-white p-8 rounded-lg shadow-md text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto"></div><p className="mt-4 text-gray-600">데이터를 불러오는 중입니다...</p></div></div>;
+            if (loading) return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">📜 시험 점수 관리</h2><div className="bg-white p-8 rounded-lg shadow-md text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto"></div><p className="mt-4 text-gray-600">데이터를 불러오는 중입니다...</p></div></div>;
             
             if (isTeacher && !selectedClass.googleSheetId) {
-                 return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">☆  시험 점수</h2><div className="bg-white p-8 rounded-lg shadow-md"><h3 className="text-xl font-bold text-gray-700 mb-2">Google 시트 연동</h3><p className="text-gray-500 mb-4">이 학급의 시험 점수를 관리할 Google 시트의 URL을 입력해주세요.<br/><a href="https://docs.google.com/spreadsheets/d/1A4-3Df_UCruvAcZtavqHq8L5NvqZCBonQIb28t0wajw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline font-bold text-sm">샘플 양식 시트 확인하기</a><span className="text-sm text-red-500">  * 시트는 <u>'링크가 있는 모든 사용자에게'</u> <b>뷰어</b>로 공유되어야 합니다. * '시험 점수' 기능 사용을 위해 정확한 <b>학급명</b>을 설정하세요. ('학년, 반' 숫자가 순서대로 들어가도록 설정) </span></p><div className="flex gap-2"><input type="text" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} className="w-full p-2 border rounded-md" placeholder="Google Sheets URL 붙여넣기" /><button onClick={handleLinkSheet} className="btn-sky !px-4 !py-2">연동</button></div></div></div>;
+                 return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">📜 시험 점수 관리</h2><div className="bg-white p-8 rounded-lg shadow-md"><h3 className="text-xl font-bold text-gray-700 mb-2">Google 시트 연동</h3><p className="text-gray-500 mb-4">이 학급의 시험 점수를 관리할 Google 시트의 URL을 입력해주세요.<br/><a href="https://docs.google.com/spreadsheets/d/1A4-3Df_UCruvAcZtavqHq8L5NvqZCBonQIb28t0wajw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline font-bold text-sm">샘플 양식 시트 확인하기</a><span className="text-sm text-red-500">  * 시트는 <u>'링크가 있는 모든 사용자에게'</u> <b>뷰어</b>로 공유되어야 합니다. * '시험 점수' 기능 사용을 위해 정확한 <b>학급명</b>을 설정하세요. ('학년, 반' 숫자가 순서대로 들어가도록 설정) </span></p><div className="flex gap-2"><input type="text" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} className="w-full p-2 border rounded-md" placeholder="Google Sheets URL 붙여넣기" /><button onClick={handleLinkSheet} className="btn-sky !px-4 !py-2">연동</button></div></div></div>;
             }
 
-            if (error) return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">☆  시험 점수</h2><div className="bg-white p-8 rounded-lg shadow-md text-center text-red-500"><p>오류: {error}</p>{isTeacher && <button onClick={handleUnlinkSheet} className="btn-red !px-4 !py-2 mt-4">시트 연동 해제</button>}</div></div>;
+            if (error) return <div><h2 className="text-3xl font-bold mb-6 text-gray-800">📜 시험 점수 관리</h2><div className="bg-white p-8 rounded-lg shadow-md text-center text-red-500"><p>오류: {error}</p>{isTeacher && <button onClick={handleUnlinkSheet} className="btn-red !px-4 !py-2 mt-4">시트 연동 해제</button>}</div></div>;
             
             if (isTeacher) {
                 const selectedStudentScore = selectedStudentId !== 'all' ? scoresData.rows.find(row => row.studentId === selectedStudentId) : null;
                 return (
                     <div>
-                        <div className="flex justify-between items-center mb-6"><h2 className="text-3xl font-bold text-gray-800">☆  시험 점수</h2><button onClick={handleUnlinkSheet} className="btn-gray !px-4 !py-2">시트 연동 해제</button></div>
+                        <div className="flex justify-between items-center mb-6"><h2 className="text-3xl font-bold text-gray-800">📜 시험 점수 관리</h2><button onClick={handleUnlinkSheet} className="btn-gray !px-4 !py-2">시트 연동 해제</button></div>
                         <div className="mb-6 max-w-sm"><label htmlFor="student-score-select" className="block text-sm font-medium text-gray-700 mb-1">학생 선택</label><select id="student-score-select" className="w-full p-2 border border-gray-300 rounded-md shadow-sm" value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)}><option value="all">전체 학생 표로 보기</option>{scoresData.rows.map(student => (<option key={student.studentId} value={student.studentId}>{student.이름} ({student.studentId})</option>))}</select></div>
                         {selectedStudentId === 'all' ? (
                             <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto"><table className="w-full text-left min-w-[800px]"><thead className="bg-gray-50"><tr>{scoresData.headers.map(header => (<th key={header} className="p-3 font-bold text-center">{header}</th>))}</tr></thead><tbody>{scoresData.rows.map((row, index) => (<tr key={index} className="border-b hover:bg-gray-50">{scoresData.headers.map(header => (<td key={header} className="p-3 font-mono text-center">{row[header]}</td>))}</tr>))}</tbody></table></div>
@@ -1257,7 +1257,7 @@
             const studentScore = scoresData.rows.find(row => row.studentId === userData.studentId);
             return (
                 <div>
-                    <h2 className="text-3xl font-bold mb-6 text-gray-800">☆  나의 시험 점수</h2>
+                    <h2 className="text-3xl font-bold mb-6 text-gray-800">📜 나의 시험 점수</h2>
                     {studentScore ? (<StudentScoreCard studentScore={studentScore} headers={scoresData.headers} />) : (<div className="bg-white p-8 rounded-lg shadow-md text-center"><p className="text-gray-600">아직 이 학급의 시험 점수가 등록되지 않았습니다.</p></div>)}
                 </div>
             );
@@ -1376,7 +1376,7 @@
                 const selectedStudentRecord = (assessmentData && selectedStudentId !== 'all') ? assessmentData.scores.find(s => s.studentId === selectedStudentId) : null;
                 return (
                     <div>
-                        <h2 className="text-3xl font-bold mb-6 text-gray-800">☆  수행 점수 관리</h2>
+                        <h2 className="text-3xl font-bold mb-6 text-gray-800">📜 수행 점수 관리</h2>
                         {!assessmentData ? (
                             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                                 <h3 className="text-xl font-bold mb-4">점수 파일 업로드</h3>
@@ -1410,7 +1410,7 @@
             const studentRecord = assessmentData?.scores.find(s => s.studentId === userData.studentId);
             return (
                 <div>
-                    <h2 className="text-3xl font-bold mb-6 text-gray-800">☆  나의 수행 점수</h2>
+                    <h2 className="text-3xl font-bold mb-6 text-gray-800">📜 나의 수행 점수</h2>
                     {studentRecord ? <StudentPerformanceCard headers={assessmentData.headers} studentRecord={studentRecord} /> : <div className="bg-white p-8 rounded-lg shadow-md text-center"><p className="text-gray-600">아직 이 학급의 수행평가 점수가 등록되지 않았습니다.</p></div>}
                 </div>
             );
@@ -1432,7 +1432,7 @@
         const teamReducer = (state, action) => {
             switch (action.type) {
                 case 'LOAD_STATE': {
-                    const { students = [], teams = [], teamCount, fixedStudentIds = [] } = action.payload;
+                    const { students = [], teams = [], teamCount, fixedStudentIds = [], savedAt = null } = action.payload;
                     const idMap = new Map();
                     const formattedStudents = students.map(s => {
                         const originalId = s.id;
@@ -1443,19 +1443,24 @@
                     });
                     const formattedTeams = (teams || []).map(team => ({
                         ...team,
+                        name: team.name || `팀 ${team.id + 1}`,
                         members: team.members.map(member => formattedStudents.find(s => s.id === idMap.get(member.id)) || member),
                     }));
                     const formattedFixedIds = new Set((Array.isArray(fixedStudentIds) ? fixedStudentIds : []).map(id => idMap.get(id)).filter(Boolean));
-                    return { ...state, students: formattedStudents, teams: formattedTeams, teamCount: teamCount || state.teamCount, fixedStudentIds: formattedFixedIds };
+                    return { ...state, students: formattedStudents, teams: formattedTeams, teamCount: teamCount || state.teamCount, fixedStudentIds: formattedFixedIds, savedAt: savedAt };
                 }
                 case 'RESET_TO_MANUAL': return createInitialTeamState();
                 case 'SET_TEAM_COUNT': return { ...state, teamCount: action.payload };
                 case 'GENERATE_TEAMS': {
                     const { students, teamCount, fixedStudentIds, teams: oldTeams } = state;
                     if (students.length === 0 || teamCount < 1) return state;
-                    const createTeamLayout_func = (_0x25a3d4,_0x42969f,_0x1f0e8a,_0x4f7f63)=>{var _0x573e04=["\x6D\x65\x6D\x62\x65\x72\x73","\x6C\x65\x6E\x67\x74\x68","\x72\x65\x64\x75\x63\x65","\x70\x75\x73\x68","\x69\x64","\x73\x6F\x72\x74","\x66\x6F\x72\x45\x61\x63\x68","\x66\x69\x6C\x74\x65\x72","\x68\x61\x73","\x75\x6E\x73\x68\x69\x66\x74","\x72\x61\x6E\x64\x6F\x6D","\x66\x72\x6F\x6D","\x66\x69\x6E\x64","\x73\x6F\x6D\x65"];const _0x1a8f9c=_0x25a3d4[_0x573e04[7]](_0x2c6a46=>_0x1f0e8a[_0x573e04[8]](_0x2c6a46[_0x573e04[4]])),_0x253b9a=_0x25a3d4[_0x573e04[7]](_0x33b934=>!_0x1f0e8a[_0x573e04[8]](_0x33b934[_0x573e04[4]])),_0x4b78c4=[..._0x253b9a][_0x573e04[5]](()=>Math[_0x573e04[10]]()-0.5),_0x15392e=Array[_0x573e04[11]]({length:_0x42969f},(_0x1b41c3,_0x4d16fe)=>({id:_0x4d16fe,members:[]}));return _0x1a8f9c[_0x573e04[6]](_0x3e4509=>{const _0x5bf5c0=_0x4f7f63[_0x573e04[12]](_0x2a3e0f=>_0x2a3e0f[_0x573e04[0]][_0x573e04[13]](_0x599f57=>_0x599f57[_0x573e04[4]]===_0x3e4509[_0x573e04[4]]));_0x5bf5c0&&_0x5bf5c0[_0x573e04[4]]<_0x42969f?_0x15392e[_0x5bf5c0[_0x573e04[4]]][_0x573e04[0]][_0x573e04[3]](_0x3e4509):_0x4b78c4[_0x573e04[9]](_0x3e4509)}),_0x4b78c4[_0x573e04[6]](_0x280e2f=>{const _0x597f8c=_0x15392e[_0x573e04[2]]((_0x26c04e,_0x247547)=>_0x26c04e[_0x573e04[0]][_0x573e04[1]]<=_0x247547[_0x573e04[0]][_0x573e04[1]]?_0x26c04e:_0x247547);_0x597f8c[_0x573e04[0]][_0x573e04[3]](_0x280e2f)}),_0x15392e[_0x573e04[6]](_0x303bb2=>_0x303bb2[_0x573e04[0]][_0x573e04[5]]((_0x111649,_0x3f9e8a)=>_0x111649.studentId - _0x3f9e8a.studentId)),_0x15392e};
+                    const createTeamLayout_func = (_0x25a3d4,_0x42969f,_0x1f0e8a,_0x4f7f63)=>{var _0x573e04=["\x6D\x65\x6D\x62\x65\x72\x73","\x6C\x65\x6E\x67\x74\x68","\x72\x65\x64\x75\x63\x65","\x70\x75\x73\x68","\x69\x64","\x73\x6F\x72\x74","\x66\x6F\x72\x45\x61\x63\x68","\x66\x69\x6C\x74\x65\x72","\x68\x61\x73","\x75\x6E\x73\x68\x69\x66\x74","\x72\x61\x6E\x64\x6F\x6D","\x66\x72\x6F\x6D","\x66\x69\x6E\x64","\x73\x6F\x6D\x65"];const _0x1a8f9c=_0x25a3d4[_0x573e04[7]](_0x2c6a46=>_0x1f0e8a[_0x573e04[8]](_0x2c6a46[_0x573e04[4]])),_0x253b9a=_0x25a3d4[_0x573e04[7]](_0x33b934=>!_0x1f0e8a[_0x573e04[8]](_0x33b934[_0x573e04[4]])),_0x4b78c4=[..._0x253b9a][_0x573e04[5]](()=>Math[_0x573e04[10]]()-0.5),_0x15392e=Array[_0x573e04[11]]({length:_0x42969f},(_0x1b41c3,_0x4d16fe)=>({id:_0x4d16fe,members:[]}));return _0x1a8f9c[_0x573e04[6]](_0x3e4509=>{const _0x5bf5c0=_0x4f7f63[_0x573e04[12]](_0x2a3e0f=>_0x2a3e0f[_0x573e04[0]][_0x573e04[13]](_0x599f57=>_0x599f57[_0x573e04[4]]===_0x3e4509[_0x573e04[4]]));_0x5bf5c0&&_0x5bf5c0[_0x573e04[4]]<_0x42969f?_0x15392e[_0x5bf5c0[_0x573e04[4]]][_0x573e04[0]][_0x573e04[3]](_0x3e4509):_0x4b78c4[_0x573e04[9]](_0x3e4509)}),_0x4b78c4[_0x573e04[6]](_0x280e2f=>{const _0x597f8c=_0x15392e[_0x573e04[2]]((_0x26c04e,_0x247547)=>_0x26c04e[_0x573e04[0]][_0x573e04[1]]<=_0x247547[_0x573e04[0]][_0x573e04[1]]?_0x26c04e:_0x247547);_0x597f8c[_0x573e04[0]][_0x573e04[3]](_0x280e2f)}),_0x15392e[_0x573e04[6]](_0x303bb2=>_0x303bb2[_0x573e04[0]][_0x573e04[5]]((_0x111649,_0x3f9e8a)=>_0x111649.studentId - _0x3f9e8a.studentId)),_0x15392e;};
                     const newTeams = createTeamLayout_func(students, teamCount, fixedStudentIds, oldTeams);
-                    return { ...state, teams: newTeams };
+                    const teamsWithNames = newTeams.map((team, index) => ({
+                        ...team,
+                        name: team.name || `${index + 1}팀`
+                    }));
+                    return { ...state, teams: teamsWithNames, savedAt: null };
                 }
                 case 'SORT_TEAMS': {
                     const sortedTeams = state.teams.map(team => ({...team, members: [...team.members].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId)))}));
@@ -1465,7 +1470,14 @@
                     const studentId = action.payload;
                     const newFixedIds = new Set(state.fixedStudentIds);
                     newFixedIds.has(studentId) ? newFixedIds.delete(studentId) : newFixedIds.add(studentId);
-                    return { ...state, fixedStudentIds: newFixedIds };
+                    return { ...state, fixedStudentIds: newFixedIds, savedAt: null };
+                }
+                case 'UPDATE_TEAM_NAME': {
+                    const { teamId, newName } = action.payload;
+                    const updatedTeams = state.teams.map(team => 
+                        team.id === teamId ? { ...team, name: newName } : team
+                    );
+                    return { ...state, teams: updatedTeams };
                 }
                 case 'SWAP_STUDENTS': {
                     const { studentAId, studentBId } = action.payload;
@@ -1480,18 +1492,18 @@
                         studentAInfo.team.members[studentAInfo.index] = studentBInfo.student;
                         studentBInfo.team.members[studentBInfo.index] = studentAInfo.student;
                     }
-                    return { ...state, teams: newTeams };
+                    return { ...state, teams: newTeams, savedAt: null };
                 }
                 case 'UPDATE_STUDENT': {
                     const { id, field, value } = action.payload;
                     const updatedStudents = state.students.map(s => (s.id === id ? { ...s, [field]: value } : s));
-                    return { ...state, students: updatedStudents };
+                    return { ...state, students: updatedStudents, savedAt: null };
                 }
                 case 'ADD_STUDENT': {
                     const existingIds = state.students.map(s => s.studentId);
                     let newStudentId = 1;
                     while(existingIds.includes(newStudentId)) { newStudentId++; }
-                    return { ...state, students: [...state.students, { id: `manual-${newStudentId}`, studentId: newStudentId, name: "새 학생" }]};
+                    return { ...state, students: [...state.students, { id: `manual-${newStudentId}`, studentId: newStudentId, name: "새 학생" }], savedAt: null };
                 }
                 case 'DELETE_STUDENT': {
                     const studentIdToDelete = action.payload;
@@ -1501,8 +1513,12 @@
                         ...state,
                         students: state.students.filter(s => s.id !== studentIdToDelete),
                         teams: state.teams.map(team => ({ ...team, members: team.members.filter(s => s.id !== studentIdToDelete) })),
-                        fixedStudentIds: newFixedIds
+                        fixedStudentIds: newFixedIds,
+                        savedAt: null
                     };
+                }
+                case 'SET_SAVED': {
+                    return { ...state, savedAt: action.payload };
                 }
                 default: return state;
             }
@@ -1546,7 +1562,7 @@
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {teamComposition.teams.map((team, index) => (
                             <div key={team.id} className="bg-white p-4 rounded-xl border shadow-md">
-                                <h3 className="font-bold text-xl text-sky-700 mb-3 text-center pb-2 border-b">{index + 1}팀 ({team.members.length}명)</h3>
+                                <h3 className="font-bold text-xl text-sky-700 mb-3 text-center pb-2 border-b">{team.name || `${index + 1}팀`} ({team.members.length}명)</h3>
                                 <ul className="space-y-2">
                                     {team.members.sort((a,b) => a.studentId - b.studentId).map(student => (
                                         <li key={student.id} className="text-center font-medium text-lg p-2 bg-slate-50 rounded-md">
@@ -1564,6 +1580,46 @@
         const TeamBuilder = ({ propStudents, selectedClass, setModalState, showToast }) => {
             const [useClassData, setUseClassData] = useState(true);
             const [state, dispatch] = useReducer(teamReducer, undefined, createInitialTeamState);
+            const [editingTeamId, setEditingTeamId] = useState(null);
+            const [editedTeamName, setEditedTeamName] = useState('');
+
+            const handleTeamNameClick = (teamId, currentName) => {
+                setEditingTeamId(teamId);
+                setEditedTeamName(currentName);
+            };
+
+            const handleTeamNameBlur = async () => {
+                if (editingTeamId !== null && editedTeamName.trim() !== '') {
+                    const newName = editedTeamName.trim();
+                    const teamId = editingTeamId;
+
+                    // 로컬 UI 즉각 업데이트
+                    dispatch({ type: 'UPDATE_TEAM_NAME', payload: { teamId, newName } });
+
+                    // 이전에 저장/공유된 기록이 있을 경우, 변경사항을 DB에 자동 저장
+                    if (state.savedAt) {
+                        const updatedTeams = state.teams.map(team =>
+                            team.id === teamId ? { ...team, name: newName } : team
+                        );
+                        const savedTimestamp = new Date().toISOString();
+                        const dataToSave = {
+                            students: state.students,
+                            teams: updatedTeams, // 수정된 이름이 적용된 팀 목록
+                            teamCount: state.teamCount,
+                            fixedStudentIds: Array.from(state.fixedStudentIds),
+                            savedAt: savedTimestamp,
+                        };
+
+                        await db.collection('classes').doc(selectedClass.id).update({ teamComposition: dataToSave });
+                        dispatch({ type: 'SET_SAVED', payload: savedTimestamp }); // 저장 상태 업데이트
+                        showToast("팀 이름이 변경되었습니다.");
+                    } else {
+                        showToast("팀 이름이 변경되었습니다.");
+                    }
+                }
+                setEditingTeamId(null);
+                setEditedTeamName('');
+            };
 
             useEffect(() => {
                 if (useClassData) {
@@ -1582,7 +1638,7 @@
                         dispatch({ type: 'LOAD_STATE', payload: doc.data().teamComposition });
                     } else {
                         const formattedStudents = propStudents.map(s => ({ ...s, studentId: parseInt(s.studentId, 10) || 0 }));
-                        dispatch({ type: 'LOAD_STATE', payload: { students: formattedStudents, teams: [], fixedStudentIds: [] } });
+                        dispatch({ type: 'LOAD_STATE', payload: { students: formattedStudents, teams: [], fixedStudentIds: [], savedAt: null } });
                     }
                 });
 
@@ -1613,14 +1669,17 @@
                     setModalState({ isOpen: true, title: "오류", content: "학급이 선택되지 않았습니다." });
                     return;
                 }
+                const savedTimestamp = new Date().toISOString();
                 const dataToSave = {
                     students: state.students,
                     teams: state.teams,
                     teamCount: state.teamCount,
                     fixedStudentIds: Array.from(state.fixedStudentIds),
-                    savedAt: new Date().toISOString(),
+                    savedAt: savedTimestamp,
                 };
                 await db.collection('classes').doc(selectedClass.id).update({ teamComposition: dataToSave });
+                
+                dispatch({ type: 'SET_SAVED', payload: savedTimestamp });
                 setModalState({ isOpen: true, title: "성공", content: "현재 팀 구성이 저장되어 학생들에게 공유됩니다."});
             };
 
@@ -1653,7 +1712,7 @@
                     setModalState({ isOpen: true, title: "알림", content: "다운로드할 팀 구성이 없습니다." });
                     return;
                 }
-                const headers = state.teams.map((team, index) => `${index + 1}팀`);
+                const headers = state.teams.map(team => team.name || `팀 ${team.id + 1}`);
                 const maxTeamSize = Math.max(...state.teams.map(team => team.members.length));
                 const dataRows = [];
                 for (let i = 0; i < maxTeamSize; i++) {
@@ -1721,9 +1780,10 @@
                     </div>
 
                     <div className="text-sm text-gray-600 bg-slate-100 p-4 rounded-lg mb-6 border">
-                        <p className="mb-1">• {useClassData ? "'현재 학급 명단'으로 팀을 구성합니다. (우측 상단 모드 변경 스위치)" : "'파일/수동 관리' 모드에서는 페이지 하단의 목록으로 팀을 구성합니다. (우측 상단 모드 변경 스위치)"}</p>
-                        <p className="mb-1">• 팀 배정 완료 후에도, 각 팀원 이름 옆 드롭다운을 통해 다른 학생과 위치를 바꿀 수 있습니다.</p>
-                        <p>• ☑️ 아이콘을 클릭하여 👑으로 바꾸면, 해당 학생을 팀에 고정한 채 나머지를 랜덤 배정합니다. (<b>팀 리더</b> 표시)</p>
+                        <p className="mb-1">• {useClassData ? "'현재 학급 명단'으로 팀을 구성합니다. (우측 상단 모드 변경 스위치) 팀 이름 클릭하여 수정 가능." : "'파일/수동 관리' 모드에서는 페이지 하단의 목록으로 팀을 구성합니다. (우측 상단 모드 변경 스위치) 팀 이름 클릭하여 수정 가능."}</p>
+                        <p className="mb-1">• 팀 배정 완료 후에도, 각 팀원 이름 옆 드롭다운을 통해 다른 학생과 <b>위치 교환</b> 할 수 있습니다.</p>
+                        <p className="mb-1">• ☑️ 아이콘을 클릭하여 👑으로 바꾸면, 해당 학생을 팀에 고정한 채 나머지를 랜덤 배정합니다. (<b class="text-red-600">팀 리더</b> 표시)</p>
+                        <p>• 팀 배정 결과 및 수정 사항을 학생에게 공유하기 위해서는 <b class="text-red-600">결과 저장</b> 버튼을 반드시 클릭해야 합니다.</p>
                     </div>
                     
                     <div className="bg-white p-4 rounded-xl shadow-md mb-8">
@@ -1744,7 +1804,23 @@
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                             {state.teams.map((team, index) => (
                                 <div key={team.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-md">
-                                    <h3 className="font-bold text-lg text-gray-700 mb-3 text-center pb-2 border-b border-slate-300">{index + 1}팀 ({team.members.length}명)</h3>
+                                    <h3 className="font-bold text-lg text-gray-700 mb-3 text-center pb-2 border-b border-slate-300">
+                                    {editingTeamId === team.id ? (
+                                        <input
+                                            type="text"
+                                            value={editedTeamName}
+                                            onChange={(e) => setEditedTeamName(e.target.value)}
+                                            onBlur={handleTeamNameBlur}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') handleTeamNameBlur(); }}
+                                            autoFocus
+                                            className="w-full text-center bg-yellow-100 rounded"
+                                        />
+                                    ) : (
+                                        <span onClick={() => handleTeamNameClick(team.id, team.name || `${index + 1}팀`)} className="cursor-pointer hover:text-blue-600">
+                                            {team.name || `${index + 1}팀`} ({team.members.length}명)
+                                        </span>
+                                    )}
+                                </h3>
                                     <div className="space-y-2">
                                         {team.members.map(student => (
                                             <div key={student.id} className={`relative w-full border rounded-lg shadow-sm px-2 py-1 h-11 flex items-center gap-1 ${state.fixedStudentIds.has(student.id) ? 'bg-yellow-100 border-yellow-300' : 'bg-white border-gray-200'}`}>
@@ -2084,7 +2160,7 @@
                                 ))}
                             </div>
                             <div className="text-center text-xs text-gray-500 mt-3 space-y-1">
-                                <p>• 🔒자물쇠로 고정석 지정 가능.(홀수 빈 좌석에 활용) • 자리 섞기 완료 후에도, 좌석 별 드롭다운 버튼을 통해 두 학생 간 좌석 위치 교환 가능.</p>
+                                <p>• 우측 상단 학생 명단 <b>모드 변경</b> 스위치 • 🔒자물쇠로 <b class="text-red-600">고정석</b> 지정 가능.(홀수 빈 좌석에 활용) • 자리 섞기 완료 후에도, 좌석 별 드롭다운 버튼을 통해 두 학생 간 좌석 <b>위치 교환</b> 가능.</p>
                             </div>
                         </div>
 
