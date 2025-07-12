@@ -131,41 +131,78 @@
         };
 
         // --- 커스텀 훅: useStudentSearch ---
-        const useStudentSearch = (setModalState) => {
-            const [searchTerm, setSearchTerm] = useState('');
-            const [isSearching, setIsSearching] = useState(false);
-            const [searchResults, setSearchResults] = useState([]);
+        // 1. Context 생성 (전역 '창고')
+        const StudentCacheContext = React.createContext();
 
-            const handleSearch = useCallback(async () => {
-                if (!searchTerm.trim()) {
+        // 2. Provider 생성 ('창고 관리자')
+        const StudentCacheProvider = ({ children }) => {
+            const [allStudentsCache, setAllStudentsCache] = useState(null);
+            const [isCacheLoading, setIsCacheLoading] = useState(false);
+
+            const fetchAndCacheStudents = useCallback(async () => {
+                if (allStudentsCache || isCacheLoading) return;
+
+                setIsCacheLoading(true);
+                try {
+                    const snapshot = await db.collection(CONSTANTS.COLLECTIONS.STUDENTS).get();
+                    const students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setAllStudentsCache(students);
+                } catch (error) {
+                    console.error("Error fetching all students:", error);
+                    // 필요하다면 여기서 모달을 띄울 수 있습니다.
+                } finally {
+                    setIsCacheLoading(false);
+                }
+            }, [allStudentsCache, isCacheLoading]);
+
+            const value = { allStudentsCache, isCacheLoading, fetchAndCacheStudents };
+
+            return (
+                <StudentCacheContext.Provider value={value}>
+                    {children}
+                </StudentCacheContext.Provider>
+            );
+        };
+
+        // 3. 최종 useStudentSearch 훅
+        const useStudentSearch = () => {
+            const { allStudentsCache, isCacheLoading, fetchAndCacheStudents } = React.useContext(StudentCacheContext);
+            
+            const [searchTerm, setSearchTerm] = useState('');
+            const [searchResults, setSearchResults] = useState([]);
+            
+            const handleSearch = useCallback(() => {
+                if (!allStudentsCache || !searchTerm.trim()) {
                     setSearchResults([]);
                     return;
                 }
-
-                setIsSearching(true);
-                try {
-                    // 모든 학생 데이터를 가져와 클라이언트 측에서 필터링 (대규모 데이터셋에서는 성능 문제 발생 가능)
-                    const snapshot = await db.collection(CONSTANTS.COLLECTIONS.STUDENTS).get();
-                    const allStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                    const lowerCaseSearchTerm = searchTerm.toLowerCase();
-
-                    const filteredResults = allStudents.filter(student => {
-                        const nameMatches = student.name && student.name.toLowerCase().includes(lowerCaseSearchTerm);
-                        const studentIdMatches = student.studentId && student.studentId.toString().includes(searchTerm);
-
-                        return nameMatches || studentIdMatches;
-                    });
-                    setSearchResults(filteredResults);
-                } catch (error) {
-                    console.error("Error searching students:", error);
-                    setModalState({ isOpen: true, title: "검색 오류", content: "학생을 검색하는 중 오류가 발생했습니다." });
-                } finally {
-                    setIsSearching(false);
+                
+                const lowerCaseSearchTerm = searchTerm.toLowerCase();
+                const filtered = allStudentsCache.filter(student => 
+                    (student.name && student.name.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (student.studentId && student.studentId.toString().includes(searchTerm))
+                );
+                setSearchResults(filtered);
+            }, [searchTerm, allStudentsCache]);
+            
+            // 검색창에 글자를 입력할 때마다 바로 검색 실행
+            useEffect(() => {
+                // 처음 검색을 시도할 때, 캐시가 비어있으면 데이터를 불러옵니다.
+                if (allStudentsCache === null) {
+                    fetchAndCacheStudents();
                 }
-            }, [searchTerm, setModalState]);
-
-            return { searchTerm, setSearchTerm, isSearching, searchResults, handleSearch };
+                // 캐시가 준비되면 검색을 수행합니다.
+                if (allStudentsCache) {
+                    handleSearch();
+                }
+            }, [searchTerm, allStudentsCache, handleSearch, fetchAndCacheStudents]);
+            
+            return { 
+                searchTerm, 
+                setSearchTerm, 
+                isSearching: isCacheLoading, // 로딩 상태를 isSearching으로 통일하여 전달
+                searchResults 
+            };
         };
 
         const StudentListEditor = ({ title, students, onUpdate, onAdd, onDelete, onLoad, onSave, setModalState }) => {
@@ -438,8 +475,8 @@
         };
         
         // --- 대시보드 관련 컴포넌트들 ---
-        const StudentSelector = ({ currentClassStudents, selectedStudents, onStudentToggle, onSelectAll, onClearAll }) => {
-            const { searchTerm, setSearchTerm, isSearching, searchResults, handleSearch } = useStudentSearch(null); // StudentSelector는 모달을 직접 사용하지 않으므로 null 전달
+        const StudentSelector = ({ currentClassStudents, selectedStudents, onStudentToggle, onSelectAll, onClearAll, setModalState }) => {
+            const { searchTerm, setSearchTerm, isSearching, searchResults } = useStudentSearch();
 
             const studentsToList = searchTerm ? searchResults : currentClassStudents;
             const isAllSelected = currentClassStudents.length > 0 && currentClassStudents.every(s => selectedStudents.some(ss => ss.id === s.id));
@@ -447,8 +484,14 @@
             return (
                 <div className="w-full md:w-80 bg-gray-50 p-4 border-t md:border-t-0 md:border-l flex flex-col rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none">
                     <div className="flex gap-2 mb-4">
-                        <input type="text" placeholder="전체 학생 검색 (이름/학번)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="w-full p-2 border rounded-md" />
-                        <button onClick={handleSearch} className="btn-sky flex-shrink-0 !px-4 !py-2">검색</button>
+                        <input 
+                            type="text" 
+                            placeholder={isSearching ? "학생 로딩 중..." : "전체 학생 검색"}
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                            className="w-full p-2 border rounded-md"
+                            disabled={isSearching}
+                        />
                     </div>
                     <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2 text-sm">
@@ -458,7 +501,7 @@
                     </div>
                     <div className="flex-grow overflow-y-auto border-y py-2 mb-4">
                         {searchTerm && <h5 className="p-2 text-sm font-bold text-gray-600 bg-gray-100 sticky top-0">전체 학생 검색 결과</h5>}
-                        {isSearching && <p className="text-center p-4">검색 중...</p>}
+                        {isSearching && !searchResults.length && <p className="text-center p-4">검색 중...</p>}
                         {[...studentsToList].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId))).map(student => (
                             <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded-md">
                                 <input type="checkbox" id={`student-${student.id}`} checked={selectedStudents.some(s => s.id === student.id)} onChange={() => onStudentToggle(student)} className="h-4 w-4 rounded" />
@@ -1042,16 +1085,18 @@
 
         const StudentManagement = ({ students, pendingStudents, deleteStudent, approveStudent, rejectStudent, inviteStudent, classes, setModalState, selectedClass, showToast }) => {
             const [invitingStudent, setInvitingStudent] = useState(null);
-            const { searchTerm, setSearchTerm, isSearching, searchResults, handleSearch } = useStudentSearch(setModalState);
+            const { searchTerm, setSearchTerm, isSearching, searchResults } = useStudentSearch();
 
             const handleInviteClick = (studentToInvite) => {
                 setModalState({
                     isOpen: true, isConfirm: true, title: "학급 초대 확인",
                     content: `'${studentToInvite.name}' 학생을 '${selectedClass.className}' 학급으로 초대하시겠습니까?`,
                     confirmText: "초대",
-                    onConfirm: () => {
-                        inviteStudent(studentToInvite, selectedClass.id);
-                        setSearchResults(prev => prev.map(s => s.id === studentToInvite.id ? { ...s, classIds: [...(s.classIds || []), selectedClass.id] } : s));
+                    onConfirm: async () => {
+                        await inviteStudent(studentToInvite, selectedClass.id);
+                        setSearchTerm(prev => prev + ' ');
+                        setSearchTerm(prev => prev.trim());
+                        showToast(`'${studentToInvite.name}' 학생을 초대했습니다.`);
                         return true;
                     }
                 });
@@ -1090,18 +1135,34 @@
                         <h3 className="text-xl font-bold mb-1">전체 학생 검색 및 초대</h3>
                         <p className="text-sm text-gray-500 mb-4">서비스에 가입된 전체 학생을 대상으로 검색하여, 해당 학급에 초대할 수 있습니다.</p>
                         <div className="flex flex-col md:flex-row gap-2 mb-4">
-                            <input type="text" placeholder="학번 또는 이름으로 검색" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="w-full p-2 border rounded-md"/>
-                            <button onClick={handleSearch} disabled={isSearching} className="btn-sky !px-6 !py-2">{isSearching ? '검색 중...' : '검색'}</button>
+                            <input 
+                                type="text" 
+                                placeholder={isSearching ? "학생 목록 로딩 중..." : "학번 또는 이름으로 검색"}
+                                value={searchTerm} 
+                                onChange={e => setSearchTerm(e.target.value)} 
+                                className="w-full p-2 border rounded-md"
+                                disabled={isSearching}
+                            />
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left min-w-[600px]"><thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">초대</th></tr></thead>
+                            <table className="w-full text-left min-w-[600px]">
+                                <thead className="bg-gray-50"><tr><th className="p-3">이름</th><th className="p-3">학번</th><th className="p-3">학교 계정</th><th className="p-3 text-center">초대</th></tr></thead>
                                 <tbody>
-                                    {isSearching ? (<tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 중...</td></tr>) : searchResults.length > 0 ? searchResults.map(s => {
+                                    {isSearching && !searchResults.length ? (<tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 중...</td></tr>) 
+                                    : searchResults.length > 0 ? searchResults.map(s => {
                                         const isAlreadyInClass = s.classIds?.includes(selectedClass.id);
                                         return (
-                                            <tr key={s.id} className="border-b"><td className="p-3">{s.name}</td><td className="p-3">{s.studentId}</td><td className="p-3">{s.schoolAccount}</td>
-                                                <td className="p-3 text-center"><button onClick={() => handleInviteClick(s)} disabled={isAlreadyInClass} className={isAlreadyInClass ? "btn-gray !px-4 !py-1" : "btn-green !px-4 !py-1"}>{isAlreadyInClass ? '초대됨' : '초대'}</button></td>
-                            </tr>);
+                                            <tr key={s.id} className="border-b">
+                                                <td className="p-3">{s.name}</td>
+                                                <td className="p-3">{s.studentId}</td>
+                                                <td className="p-3">{s.schoolAccount}</td>
+                                                <td className="p-3 text-center">
+                                                    <button onClick={() => handleInviteClick(s)} disabled={isAlreadyInClass} className={isAlreadyInClass ? "btn-gray !px-4 !py-1" : "btn-green !px-4 !py-1"}>
+                                                        {isAlreadyInClass ? '초대됨' : '초대'}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
                                     }) : (<tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 결과가 없습니다.</td></tr>)}
                                 </tbody>
                             </table>
@@ -2559,15 +2620,16 @@
             if (user === undefined) return <div className="min-h-screen flex items-center justify-center text-xl">로딩 중...</div>;
             if (user && userData) { 
                 return (
-                    <>
+                    <StudentCacheProvider setModalState={setModalState}>
                         <Toast message={toast.message} isVisible={toast.isVisible} />
                         <Dashboard 
                             user={user} 
                             initialUserData={userData} 
                             onLogout={() => auth.signOut()} 
                             showToast={showToast}
+                            setModalState={setModalState} 
                         />
-                    </>
+                    </StudentCacheProvider>
                 );
             }
             const InitialScreen = ({ onSelectRole }) => (
