@@ -130,6 +130,44 @@
             return <div style={styles}>{message}</div>;
         };
 
+        // --- 커스텀 훅: useStudentSearch ---
+        const useStudentSearch = (setModalState) => {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [isSearching, setIsSearching] = useState(false);
+            const [searchResults, setSearchResults] = useState([]);
+
+            const handleSearch = useCallback(async () => {
+                if (!searchTerm.trim()) {
+                    setSearchResults([]);
+                    return;
+                }
+
+                setIsSearching(true);
+                try {
+                    // 모든 학생 데이터를 가져와 클라이언트 측에서 필터링 (대규모 데이터셋에서는 성능 문제 발생 가능)
+                    const snapshot = await db.collection(CONSTANTS.COLLECTIONS.STUDENTS).get();
+                    const allStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+                    const filteredResults = allStudents.filter(student => {
+                        const nameMatches = student.name && student.name.toLowerCase().includes(lowerCaseSearchTerm);
+                        const studentIdMatches = student.studentId && student.studentId.toString().includes(searchTerm);
+
+                        return nameMatches || studentIdMatches;
+                    });
+                    setSearchResults(filteredResults);
+                } catch (error) {
+                    console.error("Error searching students:", error);
+                    setModalState({ isOpen: true, title: "검색 오류", content: "학생을 검색하는 중 오류가 발생했습니다." });
+                } finally {
+                    setIsSearching(false);
+                }
+            }, [searchTerm, setModalState]);
+
+            return { searchTerm, setSearchTerm, isSearching, searchResults, handleSearch };
+        };
+
         const StudentListEditor = ({ title, students, onUpdate, onAdd, onDelete, onLoad, onSave, setModalState }) => {
             const fileInputRef = useRef(null);
             const [isComposing, setIsComposing] = useState(false);
@@ -401,25 +439,7 @@
         
         // --- 대시보드 관련 컴포넌트들 ---
         const StudentSelector = ({ currentClassStudents, selectedStudents, onStudentToggle, onSelectAll, onClearAll }) => {
-            const [searchTerm, setSearchTerm] = useState('');
-            const [isSearching, setIsSearching] = useState(false);
-            const [searchResults, setSearchResults] = useState([]);
-
-            const handleSearch = async () => {
-                if (!searchTerm.trim()) {
-                    setSearchResults([]);
-                    return;
-                }
-                setIsSearching(true);
-                const nameQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('name', '>=', searchTerm).where('name', '<=', searchTerm + '\uf8ff').get();
-                const idQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('studentId', '==', searchTerm).get();
-                const [nameSnapshot, idSnapshot] = await Promise.all([nameQuery, idQuery]);
-                const resultsMap = new Map();
-                nameSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
-                idSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
-                setSearchResults(Array.from(resultsMap.values()));
-                setIsSearching(false);
-            };
+            const { searchTerm, setSearchTerm, isSearching, searchResults, handleSearch } = useStudentSearch(null); // StudentSelector는 모달을 직접 사용하지 않으므로 null 전달
 
             const studentsToList = searchTerm ? searchResults : currentClassStudents;
             const isAllSelected = currentClassStudents.length > 0 && currentClassStudents.every(s => selectedStudents.some(ss => ss.id === s.id));
@@ -1022,31 +1042,7 @@
 
         const StudentManagement = ({ students, pendingStudents, deleteStudent, approveStudent, rejectStudent, inviteStudent, classes, setModalState, selectedClass, showToast }) => {
             const [invitingStudent, setInvitingStudent] = useState(null);
-            const [searchTerm, setSearchTerm] = useState('');
-            const [isSearching, setIsSearching] = useState(false);
-            const [searchResults, setSearchResults] = useState([]);
-
-            const handleSearch = async () => {
-                if (!searchTerm.trim()) {
-                    setSearchResults([]);
-                    return;
-                }
-                setIsSearching(true);
-                try {
-                    const nameQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('name', '>=', searchTerm).where('name', '<=', searchTerm + '\uf8ff').get();
-                    const idQuery = db.collection(CONSTANTS.COLLECTIONS.STUDENTS).where('studentId', '==', searchTerm).get();
-                    const [nameSnapshot, idSnapshot] = await Promise.all([nameQuery, idQuery]);
-                    const resultsMap = new Map();
-                    nameSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
-                    idSnapshot.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() }));
-                    setSearchResults(Array.from(resultsMap.values()));
-                } catch (error) {
-                    console.error("Error searching students:", error);
-                    setModalState({ isOpen: true, title: "검색 오류", content: "학생을 검색하는 중 오류가 발생했습니다." });
-                } finally {
-                    setIsSearching(false);
-                }
-            };
+            const { searchTerm, setSearchTerm, isSearching, searchResults, handleSearch } = useStudentSearch(setModalState);
 
             const handleInviteClick = (studentToInvite) => {
                 setModalState({
@@ -1105,7 +1101,7 @@
                                         return (
                                             <tr key={s.id} className="border-b"><td className="p-3">{s.name}</td><td className="p-3">{s.studentId}</td><td className="p-3">{s.schoolAccount}</td>
                                                 <td className="p-3 text-center"><button onClick={() => handleInviteClick(s)} disabled={isAlreadyInClass} className={isAlreadyInClass ? "btn-gray !px-4 !py-1" : "btn-green !px-4 !py-1"}>{isAlreadyInClass ? '초대됨' : '초대'}</button></td>
-                                            </tr>);
+                            </tr>);
                                     }) : (<tr><td colSpan="4" className="text-center text-gray-500 p-8">검색 결과가 없습니다.</td></tr>)}
                                 </tbody>
                             </table>
