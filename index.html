@@ -475,40 +475,15 @@
         
         // --- 대시보드 관련 컴포넌트들 ---
         const StudentSelector = ({ currentClassStudents, selectedStudents, onStudentToggle, onSelectAll, onClearAll, setModalState }) => {
-            const { searchTerm, setSearchTerm, isSearching, searchResults } = useStudentSearch();
+            const { searchTerm, setSearchTerm, isSearching, searchResults, search } = useStudentSearch();
 
             const studentsToList = searchTerm ? searchResults : currentClassStudents;
             const isAllSelected = currentClassStudents.length > 0 && currentClassStudents.every(s => selectedStudents.some(ss => ss.id === s.id));
 
             return (
                 <div className="w-full md:w-80 bg-gray-50 p-4 border-t md:border-t-0 md:border-l flex flex-col rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none">
-                    <div className="flex gap-2 mb-4">
-                        <input 
-                            type="text" 
-                            placeholder={isSearching ? "학생 로딩 중..." : "전체 학생 검색"}
-                            value={searchTerm} 
-                            onChange={(e) => setSearchTerm(e.target.value)} 
-                            className="w-full p-2 border rounded-md"
-                            disabled={isSearching}
-                        />
-                    </div>
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="flex items-center gap-2 text-sm">
-                            <input type="checkbox" checked={isAllSelected} onChange={() => isAllSelected ? onClearAll() : onSelectAll()} className="h-4 w-4 rounded"/>
-                            학급 학생 모두 선택
-                        </label>
-                    </div>
-                    <div className="flex-grow overflow-y-auto border-y py-2 mb-4">
-                        {searchTerm && <h5 className="p-2 text-sm font-bold text-gray-600 bg-gray-100 sticky top-0">전체 학생 검색 결과</h5>}
-                        {isSearching && !searchResults.length && <p className="text-center p-4">검색 중...</p>}
-                        {[...studentsToList].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId))).map(student => (
-                            <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded-md">
-                                <input type="checkbox" id={`student-${student.id}`} checked={selectedStudents.some(s => s.id === student.id)} onChange={() => onStudentToggle(student)} className="h-4 w-4 rounded" />
-                                <label htmlFor={`student-${student.id}`} className="flex-grow">{student.name} ({student.studentId})</label>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex-shrink-0">
+                    
+                    <div className="flex-shrink-0 mb-4">
                         <h4 className="font-bold mb-2">선택된 학생 ({selectedStudents.length}명)</h4>
                         <div className="h-32 overflow-y-auto bg-white p-2 border rounded-md text-sm space-y-1">
                             {[...selectedStudents].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId))).map(s => 
@@ -518,6 +493,39 @@
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    <div className="flex gap-2 mb-4">
+                        <input 
+                            type="text" 
+                            placeholder={isSearching ? "학생 로딩 중..." : "전체 학생 학번 또는 이름으로 검색"}
+                            value={searchTerm} 
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                search(e.target.value);
+                            }} 
+                            className="w-full p-2 border rounded-md"
+                            disabled={isSearching}
+                        />
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2 text-sm">
+                            <input type="checkbox" checked={isAllSelected} onChange={() => isAllSelected ? onClearAll() : onSelectAll()} className="h-4 w-4 rounded"/>
+                            학급 학생 모두 선택
+                        </label>
+                    </div>
+
+                    <div className="flex-grow overflow-y-auto border-y py-2 grid grid-cols-2 gap-x-2">
+                        {searchTerm && <h5 className="p-2 text-sm font-bold text-gray-600 bg-gray-100 sticky top-0 col-span-2">전체 학생 검색 결과</h5>}
+                        {isSearching && !searchResults.length && searchTerm && <p className="text-center p-4 col-span-2">검색 중...</p>}
+                        
+                        {[...studentsToList].sort((a, b) => String(a.studentId).localeCompare(String(b.studentId))).map(student => (
+                            <div key={student.id} className="flex items-center gap-2 p-1 hover:bg-gray-200 rounded-md">
+                                <input type="checkbox" id={`student-${student.id}`} checked={selectedStudents.some(s => s.id === student.id)} onChange={() => onStudentToggle(student)} className="h-4 w-4 rounded" />
+                                <label htmlFor={`student-${student.id}`} className="flex-grow text-sm truncate">{student.name} ({student.studentId})</label>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
